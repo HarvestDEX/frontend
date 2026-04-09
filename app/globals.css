@@ -1,0 +1,112 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg:      #0f1a0f;
+  --surface: #1a2e1a;
+  --card:    #243324;
+  --border:  #4a7c59;
+  --accent:  #7bc67a;
+  --gold:    #f0c060;
+  --red:     #e05050;
+  --blue:    #5090e0;
+  --white:   #e8f5e8;
+  --muted:   #6b8f6b;
+}
+
+* { box-sizing: border-box; image-rendering: pixelated; }
+
+body {
+  background-color: var(--bg);
+  color: var(--white);
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+}
+
+h1, h2, h3, .pixel-font {
+  font-family: 'Press Start 2P', monospace;
+  line-height: 1.8;
+}
+
+.pixel-card {
+  background: var(--card);
+  border: 2px solid var(--border);
+  padding: 16px;
+  box-shadow:
+    0 -2px 0 0 var(--border),
+    0 2px 0 0 var(--border),
+    -2px 0 0 0 var(--border),
+    2px 0 0 0 var(--border);
+}
+
+.pixel-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  padding: 8px 16px;
+  border: 2px solid;
+  cursor: pointer;
+  transition: none;
+}
+
+.pixel-btn-primary {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+  box-shadow: inset -2px -2px 0 0 #2a4c2a, inset 2px 2px 0 0 #9be09a;
+}
+
+.pixel-btn-primary:hover {
+  background: #9be09a;
+}
+
+.pixel-btn-primary:active {
+  box-shadow: inset 2px 2px 0 0 #2a4c2a, inset -2px -2px 0 0 #9be09a;
+}
+
+.pixel-btn-red {
+  background: var(--red);
+  color: var(--white);
+  border-color: #a03030;
+  box-shadow: inset -2px -2px 0 0 #a03030, inset 2px 2px 0 0 #f08080;
+}
+
+.pixel-btn-red:hover {
+  background: #f08080;
+}
+
+.pixel-btn-blue {
+  background: var(--blue);
+  color: var(--white);
+  border-color: #3060a0;
+  box-shadow: inset -2px -2px 0 0 #3060a0, inset 2px 2px 0 0 #80b0f0;
+}
+
+.pixel-btn-blue:hover {
+  background: #80b0f0;
+}
+
+.price-up   { color: var(--accent); }
+.price-down { color: var(--red); }
+.price-gold { color: var(--gold); font-family: 'VT323', monospace; font-size: 24px; }
+
+.pixel-input {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  color: var(--white);
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  padding: 8px 12px;
+  outline: none;
+  width: 100%;
+}
+
+.pixel-input:focus {
+  border-color: var(--accent);
+}
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border); }
