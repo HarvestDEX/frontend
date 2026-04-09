@@ -147,7 +147,7 @@ export default function SpotTrading({ contracts, signer, onTxSuccess }: Props) {
             >
               {COMMODITIES.map((c) => (
                 <option key={c.symbol} value={c.symbol}>
-                  {c.sprite} {c.name} ({c.symbol})
+                  {c.emoji} {c.name} ({c.symbol})
                 </option>
               ))}
             </select>
@@ -210,7 +210,7 @@ export default function SpotTrading({ contracts, signer, onTxSuccess }: Props) {
             >
               {COMMODITIES.map((c) => (
                 <option key={c.symbol} value={c.symbol}>
-                  {c.sprite} {c.name} ({c.symbol})
+                  {c.emoji} {c.name} ({c.symbol})
                 </option>
               ))}
             </select>

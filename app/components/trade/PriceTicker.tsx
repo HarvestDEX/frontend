@@ -69,7 +69,7 @@ export default function PriceTicker() {
         if (typeof price !== 'number') return null
         return (
           <div key={c.symbol} className="flex items-center gap-1 flex-shrink-0">
-            <span>{c.sprite}</span>
+            <img src={c.sprite} alt={c.name} width={24} height={24} style={{ imageRendering: 'pixelated' }} />
             <span className="pixel-font text-[8px]" style={{ color: 'var(--muted)' }}>{c.symbol}</span>
             <span className="price-gold">${price.toFixed(2)}</span>
           </div>

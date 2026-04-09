@@ -96,12 +96,10 @@ export default function Commodities() {
               {/* Sprite */}
               <div
                 style={{
-                  fontSize: '48px',
-                  lineHeight: 1,
                   filter: 'drop-shadow(2px 2px 0px rgba(0,0,0,0.5))',
                 }}
               >
-                {commodity.sprite}
+                <img src={commodity.sprite} alt={commodity.name} width={48} height={48} style={{ imageRendering: 'pixelated' }} />
               </div>
 
               {/* Symbol */}

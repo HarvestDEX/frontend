@@ -4,7 +4,8 @@ export const COMMODITIES = [
     name:      "Rice",
     fullName:  "Rough Rice (CBOT)",
     unit:      "per cwt",
-    sprite:    "\u{1F33E}",
+    sprite:    "/sprites/rice.png",
+    emoji:     "\u{1F33E}",
     color:     "#f0c060",
   },
   {
@@ -12,7 +13,8 @@ export const COMMODITIES = [
     name:      "Coffee",
     fullName:  "Arabica Coffee (ICE)",
     unit:      "per lb",
-    sprite:    "\u2615",
+    sprite:    "/sprites/coffee.png",
+    emoji:     "\u2615",
     color:     "#c08040",
   },
   {
@@ -20,7 +22,8 @@ export const COMMODITIES = [
     name:      "Corn",
     fullName:  "Corn (CBOT)",
     unit:      "per bushel",
-    sprite:    "\u{1F33D}",
+    sprite:    "/sprites/corn.png",
+    emoji:     "\u{1F33D}",
     color:     "#f0e060",
   },
   {
@@ -28,7 +31,8 @@ export const COMMODITIES = [
     name:      "Palm Oil",
     fullName:  "Crude Palm Oil (Bursa Malaysia)",
     unit:      "per MT",
-    sprite:    "\u{1F334}",
+    sprite:    "/sprites/cpo.png",
+    emoji:     "\u{1F334}",
     color:     "#80c060",
   },
 ] as const

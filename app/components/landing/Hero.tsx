@@ -3,10 +3,10 @@
 import Link from 'next/link'
 
 const commodityRow = [
-  { sprite: '🌾', symbol: 'RICE' },
-  { sprite: '☕', symbol: 'COFFEE' },
-  { sprite: '🌽', symbol: 'CORN' },
-  { sprite: '🌴', symbol: 'CPO' },
+  { sprite: '/sprites/rice.png', symbol: 'RICE' },
+  { sprite: '/sprites/coffee.png', symbol: 'COFFEE' },
+  { sprite: '/sprites/corn.png', symbol: 'CORN' },
+  { sprite: '/sprites/cpo.png', symbol: 'CPO' },
 ]
 
 export default function Hero() {
@@ -108,7 +108,7 @@ export default function Hero() {
               className="pixel-card flex flex-col items-center gap-2"
               style={{ minWidth: '80px', padding: '12px 16px' }}
             >
-              <span style={{ fontSize: '32px' }}>{sprite}</span>
+              <img src={sprite} alt={symbol} width={40} height={40} style={{ imageRendering: 'pixelated' }} />
               <span
                 style={{
                   fontFamily: "'Press Start 2P', monospace",
