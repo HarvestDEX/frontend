@@ -11,6 +11,19 @@ interface Prices {
   updatedAt?: string
 }
 
+const itemKeyframes = `
+@keyframes item-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes coin-spin {
+  0% { transform: scaleX(1); }
+  40% { transform: scaleX(0.1); }
+  50% { transform: scaleX(1); }
+  100% { transform: scaleX(1); }
+}
+`
+
 export default function Commodities() {
   const [prices, setPrices] = useState<Prices | null>(null)
   const [loading, setLoading] = useState(true)
@@ -34,75 +47,151 @@ export default function Commodities() {
     if (error || !prices) return 'N/A'
     const val = prices[symbol as keyof Prices]
     if (typeof val !== 'number') return 'N/A'
-    if (val >= 100) return `$${val.toFixed(2)}`
-    if (val >= 10) return `$${val.toFixed(2)}`
-    return `$${val.toFixed(4)}`
+    if (val >= 100) return val.toFixed(2)
+    if (val >= 10) return val.toFixed(2)
+    return val.toFixed(4)
   }
 
   return (
     <section
       style={{
-        background: 'var(--surface)',
+        background: 'var(--bg)',
         padding: '80px 24px',
-        borderTop: '2px solid var(--border)',
-        borderBottom: '2px solid var(--border)',
+        borderTop: '4px solid var(--border)',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
+      <style>{itemKeyframes}</style>
+
+      {/* Decorative bushes */}
+      <div className="absolute bottom-0 left-0 pointer-events-none flex items-end hidden md:flex">
+        <img src="/sprites/bush.png" alt="" width={32} height={32} style={{ imageRendering: 'pixelated', opacity: 0.4 }} />
+        <img src="/sprites/bush.png" alt="" width={32} height={32} style={{ imageRendering: 'pixelated', opacity: 0.3, marginLeft: '4px' }} />
+      </div>
+      <div className="absolute bottom-0 right-0 pointer-events-none items-end hidden md:flex">
+        <img src="/sprites/bush.png" alt="" width={32} height={32} style={{ imageRendering: 'pixelated', opacity: 0.3, marginRight: '4px' }} />
+        <img src="/sprites/bush.png" alt="" width={32} height={32} style={{ imageRendering: 'pixelated', opacity: 0.4 }} />
+      </div>
+
       <div className="max-w-4xl mx-auto">
-        {/* Section Title */}
-        <h2
-          className="pixel-font text-center mb-4"
-          style={{
-            fontSize: 'clamp(12px, 2.5vw, 20px)',
-            color: 'var(--white)',
-          }}
-        >
-          Commodities
-        </h2>
+        {/* Section header */}
+        <div className="text-center mb-12">
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '12px',
+              background: 'var(--card)',
+              border: '2px solid var(--gold)',
+              boxShadow: '0 -2px 0 0 var(--gold), 0 2px 0 0 var(--gold), -2px 0 0 0 var(--gold), 2px 0 0 0 var(--gold)',
+              padding: '12px 28px',
+              marginBottom: '16px',
+            }}
+          >
+            <img
+              src="/sprites/gold-coin.png"
+              alt="coin"
+              width={24}
+              height={24}
+              style={{ imageRendering: 'pixelated', animation: 'coin-spin 3s ease-in-out infinite' }}
+            />
+            <h2
+              className="pixel-font"
+              style={{
+                fontSize: 'clamp(10px, 2vw, 16px)',
+                color: 'var(--gold)',
+                margin: 0,
+              }}
+            >
+              TODAY&apos;S HARVEST
+            </h2>
+            <img
+              src="/sprites/gold-coin.png"
+              alt="coin"
+              width={24}
+              height={24}
+              style={{ imageRendering: 'pixelated', animation: 'coin-spin 3s ease-in-out 1.5s infinite' }}
+            />
+          </div>
+          <p
+            style={{
+              fontFamily: "'VT323', monospace",
+              fontSize: '18px',
+              color: 'var(--muted)',
+            }}
+          >
+            Live prices from global commodity markets — updated every 10 minutes
+          </p>
+        </div>
 
-        <p
-          className="text-center mb-10"
-          style={{
-            fontFamily: "'VT323', monospace",
-            fontSize: '18px',
-            color: 'var(--muted)',
-          }}
-        >
-          Live prices from global commodity markets
-        </p>
-
-        {/* Commodity Cards Grid */}
+        {/* Inventory grid */}
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '20px',
+            gap: '16px',
             marginBottom: '32px',
           }}
         >
-          {COMMODITIES.map((commodity) => (
+          {COMMODITIES.map((commodity, idx) => (
             <div
               key={commodity.symbol}
-              className="pixel-card"
               style={{
-                padding: '24px',
+                background: 'var(--card)',
+                border: `2px solid ${commodity.color}`,
+                boxShadow: `0 -2px 0 0 ${commodity.color}, 0 2px 0 0 ${commodity.color}, -2px 0 0 0 ${commodity.color}, 2px 0 0 0 ${commodity.color}`,
+                padding: '20px 16px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: '12px',
+                gap: '10px',
                 textAlign: 'center',
+                position: 'relative',
+                overflow: 'hidden',
               }}
             >
-              {/* Sprite */}
+              {/* Item slot corner decoration */}
               <div
                 style={{
-                  filter: 'drop-shadow(2px 2px 0px rgba(0,0,0,0.5))',
+                  position: 'absolute',
+                  top: '4px',
+                  right: '4px',
+                  width: '8px',
+                  height: '8px',
+                  border: `2px solid ${commodity.color}`,
+                  opacity: 0.4,
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '4px',
+                  left: '4px',
+                  width: '8px',
+                  height: '8px',
+                  border: `2px solid ${commodity.color}`,
+                  opacity: 0.4,
+                }}
+              />
+
+              {/* Sprite with floating animation */}
+              <div
+                style={{
+                  animation: `item-float ${2.5 + idx * 0.4}s ease-in-out ${idx * 0.3}s infinite`,
+                  filter: 'drop-shadow(0 4px 0px rgba(0,0,0,0.5))',
                 }}
               >
-                <img src={commodity.sprite} alt={commodity.name} width={48} height={48} style={{ imageRendering: 'pixelated' }} />
+                <img
+                  src={commodity.sprite}
+                  alt={commodity.name}
+                  width={64}
+                  height={64}
+                  style={{ imageRendering: 'pixelated' }}
+                />
               </div>
 
-              {/* Symbol */}
+              {/* Symbol in commodity color */}
               <div
                 className="pixel-font"
                 style={{
@@ -125,15 +214,32 @@ export default function Commodities() {
                 {commodity.fullName}
               </div>
 
-              {/* Price */}
+              {/* Price row with gold coin */}
               <div
-                className="price-gold"
                 style={{
-                  fontSize: '28px',
-                  letterSpacing: '1px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'rgba(0,0,0,0.3)',
+                  border: '2px solid rgba(240,192,96,0.3)',
+                  padding: '6px 12px',
+                  width: '100%',
+                  justifyContent: 'center',
                 }}
               >
-                {getPrice(commodity.symbol)}
+                <img
+                  src="/sprites/gold-coin.png"
+                  alt="gold"
+                  width={16}
+                  height={16}
+                  style={{ imageRendering: 'pixelated', flexShrink: 0 }}
+                />
+                <span
+                  className="price-gold"
+                  style={{ fontSize: '26px', letterSpacing: '1px' }}
+                >
+                  {getPrice(commodity.symbol)}
+                </span>
               </div>
 
               {/* Unit */}
@@ -147,14 +253,15 @@ export default function Commodities() {
                 {commodity.unit}
               </div>
 
-              {/* Status dot */}
+              {/* Live indicator */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <div
                   style={{
-                    width: '8px',
-                    height: '8px',
+                    width: '6px',
+                    height: '6px',
                     background: loading ? 'var(--muted)' : error ? 'var(--red)' : 'var(--accent)',
                     flexShrink: 0,
+                    animation: (!loading && !error) ? 'check-pulse 2s ease-in-out infinite' : 'none',
                   }}
                 />
                 <span
@@ -164,26 +271,27 @@ export default function Commodities() {
                     color: 'var(--muted)',
                   }}
                 >
-                  {loading ? 'loading...' : error ? 'unavailable' : 'live'}
+                  {loading ? 'loading...' : error ? 'unavailable' : 'live feed'}
                 </span>
               </div>
             </div>
           ))}
         </div>
 
-        {/* APAC note */}
+        {/* APAC note — styled as an in-game notice */}
         <div
-          className="pixel-card text-center"
           style={{
-            padding: '16px 24px',
-            borderColor: 'var(--gold)',
+            background: 'var(--card)',
+            border: '2px solid var(--gold)',
             boxShadow: '0 -2px 0 0 var(--gold), 0 2px 0 0 var(--gold), -2px 0 0 0 var(--gold), 2px 0 0 0 var(--gold)',
+            padding: '16px 24px',
+            textAlign: 'center',
           }}
         >
           <p
             style={{
               fontFamily: "'VT323', monospace",
-              fontSize: '18px',
+              fontSize: '20px',
               color: 'var(--gold)',
               margin: 0,
               lineHeight: '1.5',
@@ -195,12 +303,12 @@ export default function Commodities() {
             <p
               style={{
                 fontFamily: "'VT323', monospace",
-                fontSize: '14px',
+                fontSize: '15px',
                 color: 'var(--muted)',
                 margin: '8px 0 0',
               }}
             >
-              Last updated: {new Date(prices.updatedAt).toLocaleTimeString()}
+              ⏱ Last oracle update: {new Date(prices.updatedAt).toLocaleTimeString()}
             </p>
           )}
         </div>

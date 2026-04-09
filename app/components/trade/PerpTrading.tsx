@@ -42,6 +42,25 @@ function formatPnl(raw: bigint): string {
   return (n >= 0 ? '+' : '') + n.toFixed(2)
 }
 
+function GoldCoin({ size = 16 }: { size?: number }) {
+  return (
+    <img
+      src="/sprites/gold-coin.png"
+      alt="gold"
+      width={size}
+      height={size}
+      style={{ imageRendering: 'pixelated', display: 'inline', verticalAlign: 'middle' }}
+    />
+  )
+}
+
+const LEVERAGE_LABELS: Record<number, string> = {
+  1: '1x EASY',
+  2: '2x MEDIUM',
+  3: '3x HARD',
+  5: '5x EXTREME',
+}
+
 export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
   const [symbol, setSymbol] = useState<CommoditySymbol>('RICE')
   const [direction, setDirection] = useState<Direction>('LONG')
@@ -140,7 +159,7 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
       }
       await tx.wait()
 
-      setOpenSuccess(`Opened ${direction} ${symbol} x${leverage}!`)
+      setOpenSuccess(`Quest accepted! ${direction} ${symbol} x${leverage}`)
       setCollateral('')
       onTxSuccess()
       fetchPositions()
@@ -179,120 +198,184 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
     ? (Number(collateral) * leverage).toFixed(2)
     : null
 
+  const selectedCommodity = COMMODITIES.find((c) => c.symbol === symbol)
+
   if (!contracts) {
     return (
-      <PixelCard>
-        <p style={{ color: 'var(--muted)' }} className="pixel-font text-[8px]">CONNECT WALLET TO TRADE</p>
+      <PixelCard icon="/sprites/barn.png" iconSize={48}>
+        <p className="pixel-font text-[8px]" style={{ color: 'var(--muted)' }}>
+          CONNECT WALLET TO ENTER THE BARN
+        </p>
       </PixelCard>
     )
   }
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Open Position */}
-      <PixelCard title="OPEN POSITION">
-        <div className="flex flex-col gap-3">
+      {/* Section header */}
+      <div className="flex items-center gap-3 px-1">
+        <img src="/sprites/barn.png" alt="barn" width={56} height={56} style={{ imageRendering: 'pixelated' }} />
+        <div>
+          <h2 className="pixel-font text-[11px]" style={{ color: 'var(--gold)' }}>THE BARN</h2>
+          <p style={{ color: 'var(--muted)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>
+            Take on leveraged quests — long or short
+          </p>
+        </div>
+        <img src="/sprites/signpost.png" alt="" width={32} height={40} style={{ imageRendering: 'pixelated', marginLeft: 'auto' }} />
+      </div>
+
+      {/* Open Position — styled as quest board */}
+      <PixelCard>
+        <div className="flex items-center gap-2 mb-4 pb-2" style={{ borderBottom: '2px solid var(--border)' }}>
+          <span style={{ fontSize: '18px' }}>📜</span>
+          <span className="pixel-font text-[10px]" style={{ color: 'var(--gold)' }}>CHOOSE A QUEST</span>
+        </div>
+
+        <div className="flex flex-col gap-4">
           {/* Commodity */}
           <div>
-            <label className="pixel-font text-[8px]" style={{ color: 'var(--muted)' }}>COMMODITY</label>
-            <select
-              value={symbol}
-              onChange={(e) => setSymbol(e.target.value as CommoditySymbol)}
-              className="pixel-input mt-1"
-              style={{ background: 'var(--surface)' }}
-            >
+            <label className="pixel-font text-[7px]" style={{ color: 'var(--muted)' }}>COMMODITY TARGET</label>
+            <div className="flex gap-1 mt-1 flex-wrap">
               {COMMODITIES.map((c) => (
-                <option key={c.symbol} value={c.symbol}>
-                  {c.emoji} {c.name} ({c.symbol})
-                </option>
+                <button
+                  key={c.symbol}
+                  onClick={() => setSymbol(c.symbol as CommoditySymbol)}
+                  className="pixel-btn"
+                  style={{
+                    padding: '4px 8px',
+                    fontSize: '8px',
+                    background: symbol === c.symbol ? 'var(--accent)' : 'var(--surface)',
+                    borderColor: symbol === c.symbol ? 'var(--accent)' : 'var(--border)',
+                    color: symbol === c.symbol ? 'var(--bg)' : 'var(--muted)',
+                  }}
+                >
+                  <img
+                    src={c.sprite}
+                    alt={c.name}
+                    width={16}
+                    height={16}
+                    style={{ imageRendering: 'pixelated', display: 'inline', marginRight: '4px', verticalAlign: 'middle' }}
+                  />
+                  {c.symbol}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
 
-          {/* Direction */}
+          {/* Direction — RPG choice buttons */}
           <div>
-            <label className="pixel-font text-[8px]" style={{ color: 'var(--muted)' }}>DIRECTION</label>
+            <label className="pixel-font text-[7px]" style={{ color: 'var(--muted)' }}>QUEST TYPE</label>
             <div className="flex gap-2 mt-1">
               <button
                 onClick={() => setDirection('LONG')}
                 className={`pixel-btn flex-1 ${direction === 'LONG' ? 'pixel-btn-blue' : ''}`}
                 style={direction !== 'LONG' ? { background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' } : {}}
               >
-                LONG
+                GO LONG 📈
               </button>
               <button
                 onClick={() => setDirection('SHORT')}
                 className={`pixel-btn flex-1 ${direction === 'SHORT' ? 'pixel-btn-red' : ''}`}
                 style={direction !== 'SHORT' ? { background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' } : {}}
               >
-                SHORT
+                GO SHORT 📉
               </button>
             </div>
           </div>
 
           {/* Collateral */}
           <div>
-            <label className="pixel-font text-[8px]" style={{ color: 'var(--muted)' }}>COLLATERAL (USDC)</label>
-            <input
-              type="number"
-              min="0"
-              step="1"
-              value={collateral}
-              onChange={(e) => setCollateral(e.target.value)}
-              placeholder="100"
-              className="pixel-input mt-1"
-            />
-          </div>
-
-          {/* Leverage */}
-          <div>
-            <label className="pixel-font text-[8px]" style={{ color: 'var(--muted)' }}>LEVERAGE</label>
-            <div className="flex gap-2 mt-1">
-              {LEVERAGE_OPTIONS.map((lv) => (
-                <button
-                  key={lv}
-                  onClick={() => setLeverage(lv)}
-                  className="pixel-btn flex-1"
-                  style={
-                    leverage === lv
-                      ? { background: 'var(--accent)', color: 'var(--bg)', borderColor: 'var(--accent)' }
-                      : { background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' }
-                  }
-                >
-                  {lv}x
-                </button>
-              ))}
+            <label className="pixel-font text-[7px]" style={{ color: 'var(--muted)' }}>GOLD WAGER</label>
+            <div className="flex items-center gap-2 mt-1">
+              <GoldCoin size={24} />
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={collateral}
+                onChange={(e) => setCollateral(e.target.value)}
+                placeholder="100"
+                className="pixel-input"
+              />
             </div>
           </div>
 
-          {/* Preview */}
+          {/* Leverage — difficulty selector */}
+          <div>
+            <label className="pixel-font text-[7px]" style={{ color: 'var(--muted)' }}>QUEST DIFFICULTY</label>
+            <div className="flex gap-2 mt-1 flex-wrap">
+              {LEVERAGE_OPTIONS.map((lv) => {
+                const isActive = leverage === lv
+                let activeStyle: React.CSSProperties = {}
+                if (isActive) {
+                  if (lv <= 1) activeStyle = { background: 'var(--accent)', color: 'var(--bg)', borderColor: 'var(--accent)' }
+                  else if (lv <= 2) activeStyle = { background: '#f0c060', color: '#0f1a0f', borderColor: '#c09040' }
+                  else if (lv <= 3) activeStyle = { background: 'var(--red)', color: 'var(--white)', borderColor: '#a03030' }
+                  else activeStyle = { background: '#9030d0', color: 'var(--white)', borderColor: '#6010a0' }
+                }
+                return (
+                  <button
+                    key={lv}
+                    onClick={() => setLeverage(lv)}
+                    className="pixel-btn"
+                    style={isActive ? activeStyle : { background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)', fontSize: '8px' }}
+                  >
+                    {LEVERAGE_LABELS[lv]}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Quest rewards preview */}
           {(notional || entryPrice) && (
-            <div className="p-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <div
+              className="p-3 flex flex-col gap-1"
+              style={{
+                background: '#0a1a0a',
+                border: '2px solid var(--accent)',
+                fontFamily: 'VT323, monospace',
+                fontSize: '17px',
+              }}
+            >
+              <div className="pixel-font text-[7px] mb-1" style={{ color: 'var(--accent)' }}>QUEST DETAILS</div>
+              {selectedCommodity && (
+                <div className="flex items-center gap-1">
+                  <img src={selectedCommodity.sprite} alt="" width={20} height={20} style={{ imageRendering: 'pixelated' }} />
+                  <span style={{ color: 'var(--muted)' }}>Target:</span>
+                  <span style={{ color: 'var(--white)' }}>{selectedCommodity.name}</span>
+                  <span style={{ color: direction === 'LONG' ? 'var(--blue)' : 'var(--red)', marginLeft: '4px' }}>
+                    {direction === 'LONG' ? '▲ LONG' : '▼ SHORT'}
+                  </span>
+                </div>
+              )}
               {notional && (
                 <div className="flex justify-between">
-                  <span style={{ color: 'var(--muted)' }}>Notional</span>
-                  <span className="price-gold">${notional} USDC</span>
+                  <span style={{ color: 'var(--muted)' }}>Notional size</span>
+                  <span style={{ color: 'var(--gold)' }}>
+                    <GoldCoin size={14} /> {notional}
+                  </span>
                 </div>
               )}
               {entryPrice && (
                 <div className="flex justify-between">
-                  <span style={{ color: 'var(--muted)' }}>Entry Price</span>
-                  <span className="price-gold">${formatPrice(entryPrice)}</span>
+                  <span style={{ color: 'var(--muted)' }}>Entry price</span>
+                  <span style={{ color: 'var(--gold)' }}>${formatPrice(entryPrice)}</span>
                 </div>
               )}
               {notional && (
                 <div className="flex justify-between">
-                  <span style={{ color: 'var(--muted)' }}>Open Fee (0.1%)</span>
+                  <span style={{ color: 'var(--muted)' }}>Guild fee (0.1%)</span>
                   <span style={{ color: 'var(--muted)' }}>
-                    ${(Number(notional) * 0.001).toFixed(2)} USDC
+                    <GoldCoin size={14} /> {(Number(notional) * 0.001).toFixed(2)}
                   </span>
                 </div>
               )}
             </div>
           )}
 
-          {openError && <p style={{ color: 'var(--red)' }} className="text-sm">{openError}</p>}
-          {openSuccess && <p style={{ color: 'var(--accent)' }} className="text-sm">{openSuccess}</p>}
+          {openError && <p style={{ color: 'var(--red)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>{openError}</p>}
+          {openSuccess && <p style={{ color: 'var(--accent)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>{openSuccess}</p>}
 
           <button
             onClick={handleOpen}
@@ -300,64 +383,116 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
             className={`pixel-btn w-full ${direction === 'LONG' ? 'pixel-btn-blue' : 'pixel-btn-red'}`}
             style={{ opacity: openLoading || !collateral ? 0.6 : 1 }}
           >
-            {openLoading ? 'OPENING...' : `OPEN ${direction} ${symbol} x${leverage}`}
+            {openLoading
+              ? 'ACCEPTING QUEST...'
+              : `${direction === 'LONG' ? '📈' : '📉'} OPEN ${direction} ${symbol} x${leverage}`}
           </button>
         </div>
       </PixelCard>
 
-      {/* My Positions */}
-      <PixelCard title="MY POSITIONS">
+      {/* My Positions — Active Quests */}
+      <PixelCard>
+        <div className="flex items-center gap-2 mb-3 pb-2" style={{ borderBottom: '2px solid var(--border)' }}>
+          <span style={{ fontSize: '18px' }}>⚔️</span>
+          <span className="pixel-font text-[10px]" style={{ color: 'var(--gold)' }}>ACTIVE QUESTS</span>
+          {positions.length > 0 && (
+            <span
+              className="pixel-font text-[7px] ml-auto"
+              style={{
+                background: 'var(--accent)',
+                color: 'var(--bg)',
+                padding: '2px 6px',
+              }}
+            >
+              {positions.length} OPEN
+            </span>
+          )}
+        </div>
+
         {posLoading && (
-          <p style={{ color: 'var(--muted)' }} className="text-sm">Loading positions...</p>
+          <p style={{ color: 'var(--muted)', fontFamily: 'VT323, monospace', fontSize: '17px' }}>
+            Checking quest board...
+          </p>
         )}
         {!posLoading && positions.length === 0 && (
-          <p style={{ color: 'var(--muted)' }} className="text-sm">No open positions.</p>
+          <div className="flex items-center gap-3 py-2">
+            <img src="/sprites/signpost.png" alt="" width={24} height={32} style={{ imageRendering: 'pixelated' }} />
+            <p style={{ color: 'var(--muted)', fontFamily: 'VT323, monospace', fontSize: '18px' }}>
+              No active quests. Visit the quest board above!
+            </p>
+          </div>
         )}
-        {closeError && <p style={{ color: 'var(--red)' }} className="text-sm mb-2">{closeError}</p>}
-        <div className="flex flex-col gap-2">
+        {closeError && (
+          <p style={{ color: 'var(--red)', fontFamily: 'VT323, monospace', fontSize: '16px' }} className="mb-2">
+            {closeError}
+          </p>
+        )}
+
+        <div className="flex flex-col gap-3">
           {positions.map((pos) => {
             const dirLabel = pos.direction === 0 ? 'LONG' : 'SHORT'
             const dirColor = pos.direction === 0 ? 'var(--blue)' : 'var(--red)'
             const pnlNum = pos.pnl !== undefined ? Number(pos.pnl) / 1e6 : null
             const pnlPositive = pnlNum !== null && pnlNum >= 0
+            const posCommodity = COMMODITIES.find((c) => c.symbol === pos.symbol)
 
             return (
               <div
                 key={pos.id}
-                className="p-3 flex flex-col gap-1"
-                style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+                className="p-3 flex flex-col gap-2"
+                style={{
+                  background: 'var(--surface)',
+                  border: `2px solid ${pnlPositive ? 'var(--accent)' : pnlNum !== null ? 'var(--red)' : 'var(--border)'}`,
+                }}
               >
+                {/* Quest header */}
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <span className="pixel-font text-[8px]" style={{ color: 'var(--muted)' }}>#{pos.id}</span>
-                    <span className="pixel-font text-[8px]">{pos.symbol}</span>
-                    <span className="pixel-font text-[8px]" style={{ color: dirColor }}>{dirLabel}</span>
-                    <span className="pixel-font text-[8px]" style={{ color: 'var(--muted)' }}>{pos.leverage}x</span>
+                    {posCommodity && (
+                      <img src={posCommodity.sprite} alt="" width={24} height={24} style={{ imageRendering: 'pixelated' }} />
+                    )}
+                    <div>
+                      <span className="pixel-font text-[8px]" style={{ color: 'var(--white)' }}>{pos.symbol}</span>
+                      <span className="pixel-font text-[8px] ml-2" style={{ color: dirColor }}>
+                        {dirLabel}
+                      </span>
+                      <span className="pixel-font text-[7px] ml-2" style={{ color: 'var(--muted)' }}>
+                        x{pos.leverage}
+                      </span>
+                    </div>
                   </div>
                   <button
                     onClick={() => handleClose(pos.id)}
                     disabled={closeLoading === pos.id}
-                    className="pixel-btn pixel-btn-red"
+                    className="pixel-btn pixel-btn-primary"
                     style={{ fontSize: '8px', padding: '4px 8px', opacity: closeLoading === pos.id ? 0.6 : 1 }}
                   >
-                    {closeLoading === pos.id ? 'CLOSING...' : 'CLOSE'}
+                    {closeLoading === pos.id ? 'CLOSING...' : 'COMPLETE QUEST'}
                   </button>
                 </div>
-                <div className="flex gap-4 text-sm">
+
+                {/* Quest stats */}
+                <div
+                  className="flex flex-wrap gap-3"
+                  style={{ fontFamily: 'VT323, monospace', fontSize: '17px' }}
+                >
                   <span style={{ color: 'var(--muted)' }}>
-                    Collateral: <span className="price-gold">${formatUsdc(pos.collateral)}</span>
+                    Wager: <span style={{ color: 'var(--gold)' }}>
+                      <GoldCoin size={13} /> {formatUsdc(pos.collateral)}
+                    </span>
                   </span>
                   <span style={{ color: 'var(--muted)' }}>
-                    Entry: <span className="price-gold">${formatPrice(pos.entryPrice)}</span>
+                    Entry: <span style={{ color: 'var(--gold)' }}>${formatPrice(pos.entryPrice)}</span>
                   </span>
                   {pos.currentPrice !== undefined && (
                     <span style={{ color: 'var(--muted)' }}>
-                      Now: <span className="price-gold">${formatPrice(pos.currentPrice)}</span>
+                      Now: <span style={{ color: 'var(--gold)' }}>${formatPrice(pos.currentPrice)}</span>
                     </span>
                   )}
                   {pnlNum !== null && (
-                    <span className={pnlPositive ? 'price-up' : 'price-down'}>
-                      PnL: {formatPnl(pos.pnl!)} USDC
+                    <span style={{ color: pnlPositive ? 'var(--accent)' : 'var(--red)', fontWeight: 'bold' }}>
+                      {pnlPositive ? '▲' : '▼'} PnL:{' '}
+                      <GoldCoin size={13} /> {formatPnl(pos.pnl!)}
                     </span>
                   )}
                 </div>

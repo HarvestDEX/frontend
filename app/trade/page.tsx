@@ -15,6 +15,40 @@ function truncateAddress(addr: string): string {
   return addr.slice(0, 6) + '...' + addr.slice(-4)
 }
 
+const TAB_CONFIG: {
+  key: Tab
+  label: string
+  sprite: string
+  spriteW: number
+  spriteH: number
+  description: string
+}[] = [
+  {
+    key: 'spot',
+    label: 'MARKET',
+    sprite: '/sprites/market-stall.png',
+    spriteW: 40,
+    spriteH: 40,
+    description: 'Buy & sell crops',
+  },
+  {
+    key: 'perp',
+    label: 'BARN',
+    sprite: '/sprites/barn.png',
+    spriteW: 40,
+    spriteH: 40,
+    description: 'Long / Short quests',
+  },
+  {
+    key: 'lp',
+    label: 'TREASURY',
+    sprite: '/sprites/treasure-chest.png',
+    spriteW: 32,
+    spriteH: 32,
+    description: 'Earn from fees',
+  },
+]
+
 export default function TradePage() {
   const [activeTab, setActiveTab] = useState<Tab>('spot')
   const [walletAddress, setWalletAddress] = useState<string | null>(null)
@@ -77,13 +111,13 @@ export default function TradePage() {
     try {
       const tx = await contracts.usdc.faucet()
       await tx.wait()
-      setFaucetSuccess('Claimed 1000 USDC!')
+      setFaucetSuccess('You claimed 1000 gold from the well!')
       refreshBalance()
     } catch (err: any) {
       if (err?.code === 4001 || err?.info?.error?.code === 4001) {
         setFaucetError('Transaction rejected.')
       } else if (err?.reason?.includes('cooldown')) {
-        setFaucetError('Faucet cooldown active. Try again tomorrow.')
+        setFaucetError('The well is dry. Come back tomorrow!')
       } else {
         setFaucetError(err?.reason || err?.message || 'Faucet claim failed.')
       }
@@ -105,81 +139,167 @@ export default function TradePage() {
     return () => window.ethereum?.removeListener('accountsChanged', handleAccountsChanged)
   }, [])
 
-  const tabs: { key: Tab; label: string }[] = [
-    { key: 'spot', label: 'SPOT TRADING' },
-    { key: 'perp', label: 'LONG / SHORT' },
-    { key: 'lp', label: 'LP POOL' },
-  ]
-
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
-      {/* Header */}
+    <div className="min-h-screen" style={{ background: 'var(--bg)', position: 'relative', overflow: 'hidden' }}>
+
+      {/* Decorative edge sprites */}
+      <div style={{ position: 'fixed', bottom: '80px', left: '12px', zIndex: 0, opacity: 0.5, pointerEvents: 'none' }}>
+        <img src="/sprites/tree.png" alt="" width={48} height={64} style={{ imageRendering: 'pixelated', display: 'block' }} />
+        <img src="/sprites/bush.png" alt="" width={32} height={32} style={{ imageRendering: 'pixelated', display: 'block', marginTop: '4px' }} />
+      </div>
+      <div style={{ position: 'fixed', bottom: '80px', right: '12px', zIndex: 0, opacity: 0.5, pointerEvents: 'none' }}>
+        <img src="/sprites/tree.png" alt="" width={48} height={64} style={{ imageRendering: 'pixelated', display: 'block' }} />
+        <img src="/sprites/bush.png" alt="" width={32} height={32} style={{ imageRendering: 'pixelated', display: 'block', marginTop: '4px', marginLeft: 'auto' }} />
+      </div>
+
+      {/* ── HEADER ─────────────────────────────────────────────────── */}
       <header
-        className="flex items-center justify-between px-4 py-3 gap-4 flex-wrap"
-        style={{ background: 'var(--surface)', borderBottom: '2px solid var(--border)' }}
+        style={{
+          background: 'var(--surface)',
+          borderBottom: '3px solid var(--border)',
+          boxShadow: '0 2px 0 0 #2a4c2a',
+          position: 'relative',
+          zIndex: 10,
+        }}
       >
-        {/* Logo */}
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <span className="pixel-font text-[12px]" style={{ color: 'var(--accent)' }}>
-            HarvestDEX
-          </span>
-        </div>
-
-        {/* Price Ticker */}
-        <div className="flex-1 min-w-0 overflow-hidden">
-          <PriceTicker />
-        </div>
-
-        {/* Wallet + Back */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {walletAddress ? (
-            <div
-              className="pixel-btn"
-              style={{ background: 'var(--card)', borderColor: 'var(--border)', color: 'var(--accent)', cursor: 'default' }}
-            >
-              {truncateAddress(walletAddress)}
+        {/* Top row: logo + wallet + back */}
+        <div className="flex items-center justify-between px-4 py-2 gap-3 flex-wrap">
+          {/* Logo + farmer avatar */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <img
+              src="/sprites/farmer-south.png"
+              alt="farmer"
+              width={34}
+              height={34}
+              style={{ imageRendering: 'pixelated' }}
+            />
+            <div>
+              <div className="pixel-font text-[11px]" style={{ color: 'var(--accent)', lineHeight: 1.4 }}>
+                HarvestDEX
+              </div>
+              <div style={{ color: 'var(--muted)', fontFamily: 'VT323, monospace', fontSize: '14px', lineHeight: 1 }}>
+                Market
+              </div>
             </div>
-          ) : (
-            <button
-              onClick={handleConnect}
-              disabled={connectLoading}
-              className="pixel-btn pixel-btn-primary"
-              style={{ opacity: connectLoading ? 0.6 : 1 }}
+          </div>
+
+          {/* Price ticker */}
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <PriceTicker />
+          </div>
+
+          {/* Wallet + Back */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {walletAddress ? (
+              /* Player name tag */
+              <div
+                className="flex items-center gap-2 px-3 py-1"
+                style={{
+                  background: 'var(--card)',
+                  border: '2px solid var(--gold)',
+                  boxShadow: 'inset -2px -2px 0 0 #7a5a20, inset 2px 2px 0 0 #f0e080',
+                }}
+              >
+                <img
+                  src="/sprites/farmer-east.png"
+                  alt=""
+                  width={20}
+                  height={20}
+                  style={{ imageRendering: 'pixelated' }}
+                />
+                <span className="pixel-font text-[8px]" style={{ color: 'var(--gold)' }}>
+                  {truncateAddress(walletAddress)}
+                </span>
+              </div>
+            ) : (
+              <button
+                onClick={handleConnect}
+                disabled={connectLoading}
+                className="pixel-btn"
+                style={{
+                  background: connectLoading ? 'var(--surface)' : '#1a1200',
+                  border: '2px solid var(--gold)',
+                  color: 'var(--gold)',
+                  boxShadow: 'inset -2px -2px 0 0 #7a5a20, inset 2px 2px 0 0 #f0e080',
+                  opacity: connectLoading ? 0.7 : 1,
+                }}
+              >
+                {connectLoading ? 'CONNECTING...' : '⚔ CONNECT'}
+              </button>
+            )}
+
+            {/* Back to Village */}
+            <Link
+              href="/"
+              className="flex items-center gap-1 px-2 py-1"
+              style={{
+                background: 'var(--surface)',
+                border: '2px solid var(--border)',
+                color: 'var(--muted)',
+                textDecoration: 'none',
+                fontFamily: 'Press Start 2P, monospace',
+                fontSize: '8px',
+              }}
             >
-              {connectLoading ? 'CONNECTING...' : 'CONNECT WALLET'}
-            </button>
-          )}
-          <Link
-            href="/"
-            className="pixel-btn"
-            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)', textDecoration: 'none' }}
-          >
-            BACK
-          </Link>
+              <img src="/sprites/signpost.png" alt="" width={14} height={18} style={{ imageRendering: 'pixelated' }} />
+              VILLAGE
+            </Link>
+          </div>
         </div>
+
+        {connectError && (
+          <div className="px-4 py-1" style={{ background: 'var(--red)', color: 'var(--white)' }}>
+            <span style={{ fontFamily: 'VT323, monospace', fontSize: '16px' }}>{connectError}</span>
+          </div>
+        )}
       </header>
 
-      {connectError && (
-        <div className="px-4 py-2" style={{ background: 'var(--red)', color: 'var(--white)' }}>
-          <span className="text-sm">{connectError}</span>
-        </div>
-      )}
+      {/* ── MAIN ───────────────────────────────────────────────────── */}
+      <main className="max-w-5xl mx-auto px-4 py-5 flex flex-col gap-5" style={{ position: 'relative', zIndex: 1 }}>
 
-      <main className="max-w-5xl mx-auto px-4 py-6 flex flex-col gap-6">
-        {/* USDC Faucet */}
+        {/* ── VILLAGE WELL / FAUCET ─────────────────────────────── */}
         <div
           className="flex flex-wrap items-center justify-between gap-4 p-4"
-          style={{ background: 'var(--card)', border: '2px solid var(--border)' }}
+          style={{
+            background: 'var(--card)',
+            border: '2px solid var(--border)',
+            boxShadow: '0 -2px 0 0 var(--border), 0 2px 0 0 var(--border), -2px 0 0 0 var(--border), 2px 0 0 0 var(--border)',
+          }}
         >
-          <div className="flex items-center gap-4">
-            <span className="pixel-font text-[9px]" style={{ color: 'var(--gold)' }}>USDC FAUCET</span>
-            <span className="text-sm" style={{ color: 'var(--muted)' }}>
-              Balance:{' '}
-              <span className="price-gold">
-                {(Number(usdcBalance) / 1e6).toFixed(2)} USDC
-              </span>
-            </span>
+          {/* Left: Well + title + balance */}
+          <div className="flex items-center gap-3">
+            <img
+              src="/sprites/well.png"
+              alt="village well"
+              width={48}
+              height={56}
+              style={{ imageRendering: 'pixelated', flexShrink: 0 }}
+            />
+            <div>
+              <p className="pixel-font text-[9px]" style={{ color: 'var(--gold)' }}>VILLAGE WELL</p>
+              <p style={{ color: 'var(--muted)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>
+                Claim 1000 gold per day
+              </p>
+              {/* Gold balance */}
+              <div className="flex items-center gap-1 mt-1">
+                <img
+                  src="/sprites/gold-coin.png"
+                  alt="gold"
+                  width={18}
+                  height={18}
+                  style={{ imageRendering: 'pixelated' }}
+                />
+                <span style={{ color: 'var(--gold)', fontFamily: 'VT323, monospace', fontSize: '22px' }}>
+                  {(Number(usdcBalance) / 1e6).toFixed(2)}
+                </span>
+                <span className="pixel-font text-[7px]" style={{ color: 'var(--gold)', marginLeft: '2px' }}>
+                  GOLD
+                </span>
+              </div>
+            </div>
           </div>
+
+          {/* Right: Faucet button + messages */}
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-3">
               <button
@@ -188,36 +308,73 @@ export default function TradePage() {
                 className="pixel-btn pixel-btn-primary"
                 style={{ opacity: faucetLoading || !contracts ? 0.6 : 1 }}
               >
-                {faucetLoading ? 'CLAIMING...' : 'CLAIM 1000 USDC'}
+                {faucetLoading ? 'DRAWING WATER...' : '💧 CLAIM 1000 GOLD'}
               </button>
               {!walletAddress && (
-                <span className="text-sm" style={{ color: 'var(--muted)' }}>Connect wallet first</span>
+                <span style={{ color: 'var(--muted)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>
+                  Connect wallet first
+                </span>
               )}
             </div>
-            {faucetError && <p style={{ color: 'var(--red)' }} className="text-sm">{faucetError}</p>}
-            {faucetSuccess && <p style={{ color: 'var(--accent)' }} className="text-sm">{faucetSuccess}</p>}
+            {faucetError && (
+              <p style={{ color: 'var(--red)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>{faucetError}</p>
+            )}
+            {faucetSuccess && (
+              <p style={{ color: 'var(--accent)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>{faucetSuccess}</p>
+            )}
           </div>
         </div>
 
-        {/* Tab Bar */}
+        {/* ── RPG TAB BAR ───────────────────────────────────────── */}
         <div className="flex gap-2 flex-wrap">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`pixel-btn ${activeTab === tab.key ? 'pixel-btn-primary' : ''}`}
-              style={
-                activeTab !== tab.key
-                  ? { background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' }
-                  : {}
-              }
-            >
-              {tab.label}
-            </button>
-          ))}
+          {TAB_CONFIG.map((tab) => {
+            const isActive = activeTab === tab.key
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className="flex items-center gap-2 px-3 py-2"
+                style={{
+                  background: isActive ? 'var(--card)' : 'var(--surface)',
+                  border: isActive ? '2px solid var(--gold)' : '2px solid var(--border)',
+                  boxShadow: isActive
+                    ? 'inset -2px -2px 0 0 #7a5a20, inset 2px 2px 0 0 #f0e080, 0 0 8px 1px rgba(240,192,96,0.3)'
+                    : 'none',
+                  cursor: 'pointer',
+                  transition: 'none',
+                  outline: 'none',
+                }}
+              >
+                <img
+                  src={tab.sprite}
+                  alt={tab.label}
+                  width={tab.spriteW}
+                  height={tab.spriteH}
+                  style={{ imageRendering: 'pixelated' }}
+                />
+                <div className="text-left">
+                  <div
+                    className="pixel-font text-[9px]"
+                    style={{ color: isActive ? 'var(--gold)' : 'var(--muted)' }}
+                  >
+                    {tab.label}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: 'VT323, monospace',
+                      fontSize: '14px',
+                      color: isActive ? 'var(--white)' : 'var(--muted)',
+                    }}
+                  >
+                    {tab.description}
+                  </div>
+                </div>
+              </button>
+            )
+          })}
         </div>
 
-        {/* Tab Content */}
+        {/* ── TAB CONTENT ───────────────────────────────────────── */}
         <div>
           {activeTab === 'spot' && (
             <SpotTrading

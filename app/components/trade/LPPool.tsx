@@ -19,16 +19,35 @@ function formatLp(raw: bigint): string {
   return (Number(raw) / 1e18).toFixed(4)
 }
 
-// lpTokenPrice is returned as (poolBalance * 1e18) / totalSupply
-// To get USDC price: result / 1e18 * (1e6/1e18)? No — contract returns usdc*1e18/lp
-// so actual USDC per lp = result / 1e18  (since both pool and lp scaled)
-// Actually: lpTokenPrice = (usdc.balanceOf * 1e18) / totalSupply
-// usdc has 6 dec, lp has 18 dec. Price in USDC units: result / 1e18 * 1e6 / 1e6 = result / 1e18
-// But result represents (usdcBalance_6dec * 1e18) / lpSupply_18dec
-// = usdcBalance / lpSupply * 1e6  (in units of USDC-micro)
-// Display: result / 1e6
 function formatLpPrice(raw: bigint): string {
   return (Number(raw) / 1e6).toFixed(6)
+}
+
+function GoldCoin({ size = 16 }: { size?: number }) {
+  return (
+    <img
+      src="/sprites/gold-coin.png"
+      alt="gold"
+      width={size}
+      height={size}
+      style={{ imageRendering: 'pixelated', display: 'inline', verticalAlign: 'middle' }}
+    />
+  )
+}
+
+function StatBox({ label, value, icon }: { label: string; value: React.ReactNode; icon?: React.ReactNode }) {
+  return (
+    <div
+      className="flex flex-col gap-1 p-2"
+      style={{ background: 'var(--surface)', border: '2px solid var(--border)' }}
+    >
+      <p className="pixel-font text-[7px]" style={{ color: 'var(--muted)' }}>{label}</p>
+      <div className="flex items-center gap-1">
+        {icon}
+        <span style={{ color: 'var(--gold)', fontFamily: 'VT323, monospace', fontSize: '20px' }}>{value}</span>
+      </div>
+    </div>
+  )
 }
 
 export default function LPPool({ contracts, signer, onTxSuccess }: Props) {
@@ -99,7 +118,7 @@ export default function LPPool({ contracts, signer, onTxSuccess }: Props) {
       const depositTx = await contracts.lp.deposit(usdcAmt)
       await depositTx.wait()
 
-      setDepositSuccess(`Deposited ${depositAmount} USDC into the pool!`)
+      setDepositSuccess(`Deposited ${depositAmount} gold into the treasury!`)
       setDepositAmount('')
       onTxSuccess()
       fetchStats()
@@ -125,7 +144,7 @@ export default function LPPool({ contracts, signer, onTxSuccess }: Props) {
       const withdrawTx = await contracts.lp.withdraw(lpAmt)
       await withdrawTx.wait()
 
-      setWithdrawSuccess(`Withdrawn ${withdrawAmount} lpUSDC!`)
+      setWithdrawSuccess(`Withdrawn ${withdrawAmount} shares from treasury!`)
       setWithdrawAmount('')
       onTxSuccess()
       fetchStats()
@@ -142,70 +161,114 @@ export default function LPPool({ contracts, signer, onTxSuccess }: Props) {
 
   if (!contracts) {
     return (
-      <PixelCard>
-        <p style={{ color: 'var(--muted)' }} className="pixel-font text-[8px]">CONNECT WALLET TO USE LP</p>
+      <PixelCard icon="/sprites/treasure-chest.png" iconSize={48}>
+        <p className="pixel-font text-[8px]" style={{ color: 'var(--muted)' }}>
+          CONNECT WALLET TO ACCESS THE TREASURY
+        </p>
       </PixelCard>
     )
   }
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Section header */}
+      <div className="flex items-center gap-3 px-1">
+        <img src="/sprites/treasure-chest.png" alt="treasure chest" width={48} height={48} style={{ imageRendering: 'pixelated' }} />
+        <div>
+          <h2 className="pixel-font text-[11px]" style={{ color: 'var(--gold)' }}>THE TREASURY</h2>
+          <p style={{ color: 'var(--muted)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>
+            Deposit gold, earn fees from all trades
+          </p>
+        </div>
+        <img src="/sprites/well.png" alt="" width={32} height={36} style={{ imageRendering: 'pixelated', marginLeft: 'auto' }} />
+      </div>
+
       {/* Pool Stats */}
-      <PixelCard title="POOL STATS">
+      <PixelCard>
+        <div className="flex items-center gap-2 mb-3 pb-2" style={{ borderBottom: '2px solid var(--border)' }}>
+          <span style={{ fontSize: '18px' }}>📊</span>
+          <span className="pixel-font text-[10px]" style={{ color: 'var(--gold)' }}>TREASURY LEDGER</span>
+        </div>
+
         {statsLoading ? (
-          <p style={{ color: 'var(--muted)' }} className="text-sm">Loading...</p>
+          <p style={{ color: 'var(--muted)', fontFamily: 'VT323, monospace', fontSize: '17px' }}>
+            Counting coins...
+          </p>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            <div>
-              <p className="pixel-font text-[8px]" style={{ color: 'var(--muted)' }}>TOTAL POOL</p>
-              <p className="price-gold">${formatUsdc(poolBalance)} USDC</p>
-            </div>
-            <div>
-              <p className="pixel-font text-[8px]" style={{ color: 'var(--muted)' }}>LP TOKEN PRICE</p>
-              <p className="price-gold">${formatLpPrice(lpPrice)}</p>
-            </div>
-            <div>
-              <p className="pixel-font text-[8px]" style={{ color: 'var(--muted)' }}>FEES EARNED</p>
-              <p style={{ color: 'var(--accent)' }} className="font-body">${formatUsdc(totalFees)} USDC</p>
-            </div>
-            <div>
-              <p className="pixel-font text-[8px]" style={{ color: 'var(--muted)' }}>YOUR lpUSDC</p>
-              <p className="price-gold">{formatLp(userLpBalance)}</p>
-            </div>
-            <div>
-              <p className="pixel-font text-[8px]" style={{ color: 'var(--muted)' }}>YOUR VALUE</p>
-              <p style={{ color: 'var(--accent)' }} className="font-body">${formatUsdc(userPreviewWithdraw)} USDC</p>
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <StatBox
+              label="TREASURY GOLD"
+              value={`${formatUsdc(poolBalance)} USDC`}
+              icon={<GoldCoin size={18} />}
+            />
+            <StatBox
+              label="SHARE PRICE"
+              value={`$${formatLpPrice(lpPrice)}`}
+              icon={<img src="/sprites/gold-coin.png" alt="" width={16} height={16} style={{ imageRendering: 'pixelated' }} />}
+            />
+            <StatBox
+              label="TOTAL FEES EARNED"
+              value={`${formatUsdc(totalFees)} USDC`}
+              icon={<img src="/sprites/treasure-chest.png" alt="" width={18} height={18} style={{ imageRendering: 'pixelated' }} />}
+            />
+            <StatBox
+              label="YOUR SHARES"
+              value={`${formatLp(userLpBalance)} lpUSDC`}
+              icon={<span style={{ fontSize: '16px' }}>🏦</span>}
+            />
+            <StatBox
+              label="YOUR VALUE"
+              value={`${formatUsdc(userPreviewWithdraw)} USDC`}
+              icon={<GoldCoin size={18} />}
+            />
           </div>
         )}
       </PixelCard>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Deposit */}
-        <PixelCard title="DEPOSIT USDC">
+        <PixelCard>
+          <div className="flex items-center gap-2 mb-3 pb-2" style={{ borderBottom: '2px solid var(--border)' }}>
+            <GoldCoin size={20} />
+            <span className="pixel-font text-[10px]" style={{ color: 'var(--accent)' }}>DEPOSIT GOLD</span>
+          </div>
+
           <div className="flex flex-col gap-3">
             <div>
-              <label className="pixel-font text-[8px]" style={{ color: 'var(--muted)' }}>AMOUNT (USDC)</label>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
-                placeholder="100"
-                className="pixel-input mt-1"
-              />
+              <label className="pixel-font text-[7px]" style={{ color: 'var(--muted)' }}>AMOUNT (USDC)</label>
+              <div className="flex items-center gap-2 mt-1">
+                <GoldCoin size={24} />
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value)}
+                  placeholder="100"
+                  className="pixel-input"
+                />
+              </div>
             </div>
 
             {depositAmount && !isNaN(Number(depositAmount)) && Number(depositAmount) > 0 && (
-              <div className="p-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                <div className="flex justify-between">
-                  <span style={{ color: 'var(--muted)' }}>You deposit</span>
-                  <span className="price-gold">${Number(depositAmount).toFixed(2)} USDC</span>
+              <div
+                className="p-2 flex flex-col gap-1"
+                style={{
+                  background: '#1a1200',
+                  border: '2px solid #7a5a20',
+                  fontFamily: 'VT323, monospace',
+                  fontSize: '17px',
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <span style={{ color: '#b08030' }}>You deposit</span>
+                  <span style={{ color: 'var(--gold)' }}>
+                    <GoldCoin size={14} /> {Number(depositAmount).toFixed(2)} USDC
+                  </span>
                 </div>
-                <div className="flex justify-between">
-                  <span style={{ color: 'var(--muted)' }}>You receive ~</span>
-                  <span className="price-gold">
+                <div className="flex items-center justify-between">
+                  <span style={{ color: '#b08030' }}>You receive ~</span>
+                  <span style={{ color: 'var(--accent)' }}>
                     {lpPrice > BigInt(0)
                       ? (Number(depositAmount) / (Number(lpPrice) / 1e6)).toFixed(4)
                       : Number(depositAmount).toFixed(4)
@@ -215,8 +278,12 @@ export default function LPPool({ contracts, signer, onTxSuccess }: Props) {
               </div>
             )}
 
-            {depositError && <p style={{ color: 'var(--red)' }} className="text-sm">{depositError}</p>}
-            {depositSuccess && <p style={{ color: 'var(--accent)' }} className="text-sm">{depositSuccess}</p>}
+            {depositError && (
+              <p style={{ color: 'var(--red)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>{depositError}</p>
+            )}
+            {depositSuccess && (
+              <p style={{ color: 'var(--accent)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>{depositSuccess}</p>
+            )}
 
             <button
               onClick={handleDeposit}
@@ -224,27 +291,43 @@ export default function LPPool({ contracts, signer, onTxSuccess }: Props) {
               className="pixel-btn pixel-btn-primary w-full"
               style={{ opacity: depositLoading || !depositAmount ? 0.6 : 1 }}
             >
-              {depositLoading ? 'DEPOSITING...' : 'DEPOSIT'}
+              {depositLoading ? 'DEPOSITING...' : 'DEPOSIT GOLD'}
             </button>
           </div>
         </PixelCard>
 
         {/* Withdraw */}
-        <PixelCard title="WITHDRAW lpUSDC">
+        <PixelCard>
+          <div className="flex items-center gap-2 mb-3 pb-2" style={{ borderBottom: '2px solid var(--border)' }}>
+            <img src="/sprites/treasure-chest.png" alt="" width={20} height={20} style={{ imageRendering: 'pixelated' }} />
+            <span className="pixel-font text-[10px]" style={{ color: 'var(--red)' }}>WITHDRAW GOLD</span>
+          </div>
+
           <div className="flex flex-col gap-3">
-            <div className="p-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-              <div className="flex justify-between">
-                <span style={{ color: 'var(--muted)' }}>Your lpUSDC</span>
-                <span className="price-gold">{formatLp(userLpBalance)}</span>
+            {/* Current balance info */}
+            <div
+              className="p-2 flex flex-col gap-1"
+              style={{
+                background: 'var(--surface)',
+                border: '2px solid var(--border)',
+                fontFamily: 'VT323, monospace',
+                fontSize: '17px',
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <span style={{ color: 'var(--muted)' }}>Your shares</span>
+                <span style={{ color: 'var(--gold)' }}>{formatLp(userLpBalance)} lpUSDC</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex items-center justify-between">
                 <span style={{ color: 'var(--muted)' }}>Redeemable for</span>
-                <span style={{ color: 'var(--accent)' }}>${formatUsdc(userPreviewWithdraw)} USDC</span>
+                <span style={{ color: 'var(--accent)' }}>
+                  <GoldCoin size={14} /> {formatUsdc(userPreviewWithdraw)} USDC
+                </span>
               </div>
             </div>
 
             <div>
-              <label className="pixel-font text-[8px]" style={{ color: 'var(--muted)' }}>AMOUNT (lpUSDC)</label>
+              <label className="pixel-font text-[7px]" style={{ color: 'var(--muted)' }}>AMOUNT (lpUSDC)</label>
               <input
                 type="number"
                 min="0"
@@ -257,18 +340,25 @@ export default function LPPool({ contracts, signer, onTxSuccess }: Props) {
             </div>
 
             <button
-              onClick={() => {
-                // Fill max
-                setWithdrawAmount(formatLp(userLpBalance))
-              }}
+              onClick={() => setWithdrawAmount(formatLp(userLpBalance))}
               className="pixel-btn"
-              style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)', fontSize: '8px', padding: '4px 8px' }}
+              style={{
+                background: 'var(--surface)',
+                borderColor: 'var(--border)',
+                color: 'var(--muted)',
+                fontSize: '8px',
+                padding: '4px 8px',
+              }}
             >
               MAX
             </button>
 
-            {withdrawError && <p style={{ color: 'var(--red)' }} className="text-sm">{withdrawError}</p>}
-            {withdrawSuccess && <p style={{ color: 'var(--accent)' }} className="text-sm">{withdrawSuccess}</p>}
+            {withdrawError && (
+              <p style={{ color: 'var(--red)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>{withdrawError}</p>
+            )}
+            {withdrawSuccess && (
+              <p style={{ color: 'var(--accent)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>{withdrawSuccess}</p>
+            )}
 
             <button
               onClick={handleWithdraw}
@@ -276,7 +366,7 @@ export default function LPPool({ contracts, signer, onTxSuccess }: Props) {
               className="pixel-btn pixel-btn-red w-full"
               style={{ opacity: withdrawLoading || !withdrawAmount || userLpBalance === BigInt(0) ? 0.6 : 1 }}
             >
-              {withdrawLoading ? 'WITHDRAWING...' : 'WITHDRAW'}
+              {withdrawLoading ? 'WITHDRAWING...' : 'WITHDRAW GOLD'}
             </button>
           </div>
         </PixelCard>

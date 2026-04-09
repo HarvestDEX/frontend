@@ -4,34 +4,139 @@ import Link from 'next/link'
 import { EXPLORER_URL } from '../../lib/constants'
 
 const links = [
-  { label: 'Demo', href: '/trade', external: false },
-  { label: 'GitHub', href: 'https://github.com', external: true },
-  { label: 'DoraHacks', href: 'https://dorahacks.io/hackathon/2045', external: true },
-  { label: 'Explorer', href: EXPLORER_URL, external: true },
+  { label: 'ENTER MARKET', href: '/trade', external: false },
+  { label: 'GITHUB', href: 'https://github.com', external: true },
+  { label: 'DORAHACKS', href: 'https://dorahacks.io/hackathon/2045', external: true },
+  { label: 'EXPLORER', href: EXPLORER_URL, external: true },
 ]
+
+const walkKeyframes = `
+@keyframes walk-right {
+  0% { transform: translateX(-20px); }
+  100% { transform: translateX(20px); }
+}
+@keyframes hud-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+`
 
 export default function Footer() {
   return (
     <footer
       style={{
         background: 'var(--surface)',
-        borderTop: '2px solid var(--border)',
-        padding: '48px 24px 32px',
+        borderTop: '4px solid var(--border)',
+        padding: '0',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      <div className="max-w-4xl mx-auto">
-        {/* Logo row */}
-        <div className="flex justify-center mb-8">
-          <span
-            className="pixel-font"
-            style={{ fontSize: '14px', color: 'var(--accent)' }}
+      <style>{walkKeyframes}</style>
+
+      {/* Ground / grass strip at top of footer */}
+      <div
+        style={{
+          height: '20px',
+          background: '#1a3a10',
+          borderBottom: '4px solid #2a5a18',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Walking farmer */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '0px',
+            left: '50%',
+            animation: 'walk-right 4s ease-in-out infinite alternate',
+          }}
+        >
+          <img
+            src="/sprites/farmer-east.png"
+            alt="farmer"
+            width={34}
+            height={34}
+            style={{ imageRendering: 'pixelated', display: 'block' }}
+          />
+        </div>
+      </div>
+
+      {/* Main footer content */}
+      <div
+        style={{
+          padding: '40px 24px 28px',
+          maxWidth: '900px',
+          margin: '0 auto',
+        }}
+      >
+        {/* HUD top bar */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '16px',
+            marginBottom: '28px',
+            flexWrap: 'wrap',
+          }}
+        >
+          {/* Logo with farmer sprite */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img
+              src="/sprites/farmer-south.png"
+              alt="farmer"
+              width={34}
+              height={34}
+              style={{ imageRendering: 'pixelated' }}
+            />
+            <span
+              className="pixel-font"
+              style={{ fontSize: '12px', color: 'var(--accent)' }}
+            >
+              HarvestDEX
+            </span>
+          </div>
+
+          {/* Divider pixel */}
+          <div style={{ width: '4px', height: '4px', background: 'var(--border)' }} />
+
+          {/* Hackathon badge */}
+          <div
+            style={{
+              background: 'var(--card)',
+              border: '2px solid var(--gold)',
+              boxShadow: '0 -2px 0 0 var(--gold), 0 2px 0 0 var(--gold), -2px 0 0 0 var(--gold), 2px 0 0 0 var(--gold)',
+              padding: '4px 12px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
           >
-            🌾 HarvestDEX
-          </span>
+            <span
+              style={{
+                fontFamily: "'Press Start 2P', monospace",
+                fontSize: '6px',
+                color: 'var(--gold)',
+                animation: 'hud-blink 2.5s ease-in-out infinite',
+              }}
+            >
+              ★ HACKATHON 2026 ★
+            </span>
+          </div>
         </div>
 
-        {/* Links row */}
-        <nav className="flex justify-center flex-wrap gap-6 mb-8">
+        {/* Nav links as pixel buttons */}
+        <nav
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+            gap: '12px',
+            marginBottom: '28px',
+          }}
+        >
           {links.map(({ label, href, external }) =>
             external ? (
               <a
@@ -39,78 +144,120 @@ export default function Footer() {
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{
-                  fontFamily: "'Press Start 2P', monospace",
-                  fontSize: '8px',
-                  color: 'var(--muted)',
-                  textDecoration: 'none',
-                  transition: 'color 0.1s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent)')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--muted)')}
+                style={{ textDecoration: 'none' }}
               >
-                {label}
+                <div
+                  style={{
+                    fontFamily: "'Press Start 2P', monospace",
+                    fontSize: '7px',
+                    color: 'var(--muted)',
+                    border: '2px solid var(--border)',
+                    padding: '6px 12px',
+                    background: 'var(--card)',
+                    cursor: 'pointer',
+                    boxShadow: 'inset -2px -2px 0 0 rgba(0,0,0,0.4), inset 2px 2px 0 0 rgba(255,255,255,0.05)',
+                    transition: 'color 0.1s, border-color 0.1s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'var(--accent)'
+                    e.currentTarget.style.borderColor = 'var(--accent)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = 'var(--muted)'
+                    e.currentTarget.style.borderColor = 'var(--border)'
+                  }}
+                >
+                  {label}
+                </div>
               </a>
             ) : (
-              <Link
-                key={label}
-                href={href}
-                style={{
-                  fontFamily: "'Press Start 2P', monospace",
-                  fontSize: '8px',
-                  color: 'var(--muted)',
-                  textDecoration: 'none',
-                }}
-              >
-                {label}
+              <Link key={label} href={href} style={{ textDecoration: 'none' }}>
+                <div
+                  style={{
+                    fontFamily: "'Press Start 2P', monospace",
+                    fontSize: '7px',
+                    color: 'var(--accent)',
+                    border: '2px solid var(--accent)',
+                    padding: '6px 12px',
+                    background: 'var(--card)',
+                    cursor: 'pointer',
+                    boxShadow: 'inset -2px -2px 0 0 #2a4c2a, inset 2px 2px 0 0 #9be09a',
+                  }}
+                >
+                  ▶ {label}
+                </div>
               </Link>
             )
           )}
         </nav>
 
-        {/* Divider */}
+        {/* Pixel divider */}
         <div
           style={{
-            borderTop: '2px solid var(--border)',
-            marginBottom: '24px',
+            height: '4px',
+            background: `repeating-linear-gradient(90deg, var(--border) 0px, var(--border) 8px, transparent 8px, transparent 16px)`,
+            marginBottom: '20px',
+            opacity: 0.6,
           }}
         />
 
-        {/* Hackathon info */}
-        <p
-          className="text-center mb-3"
+        {/* HUD info row */}
+        <div
           style={{
-            fontFamily: "'Press Start 2P', monospace",
-            fontSize: '7px',
-            color: 'var(--muted)',
-            lineHeight: '2',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '24px',
+            flexWrap: 'wrap',
+            marginBottom: '16px',
           }}
         >
-          HashKey Chain Horizon Hackathon 2026 · DeFi Track
-        </p>
+          {/* Chain info */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'var(--card)',
+              border: '2px solid var(--border)',
+              padding: '4px 10px',
+            }}
+          >
+            <div style={{ width: '6px', height: '6px', background: 'var(--accent)' }} />
+            <span
+              style={{
+                fontFamily: "'VT323', monospace",
+                fontSize: '16px',
+                color: 'var(--muted)',
+              }}
+            >
+              HashKey Testnet · Chain ID: 133
+            </span>
+          </div>
 
-        {/* Chain info */}
-        <p
-          className="text-center mb-3"
-          style={{
-            fontFamily: "'VT323', monospace",
-            fontSize: '16px',
-            color: 'var(--muted)',
-          }}
-        >
-          HashKey Chain Testnet — Chain ID: 133
-        </p>
+          {/* DeFi track */}
+          <div
+            style={{
+              fontFamily: "'VT323', monospace",
+              fontSize: '16px',
+              color: 'var(--muted)',
+            }}
+          >
+            DeFi Track
+          </div>
+        </div>
 
-        {/* Built with */}
+        {/* Bottom credits */}
         <p
-          className="text-center"
           style={{
+            textAlign: 'center',
             fontFamily: "'VT323', monospace",
             fontSize: '18px',
             color: 'var(--border)',
+            margin: 0,
           }}
         >
-          Built with 🌾 on HashKey Chain
+          Built with 🌾 on HashKey Chain · HashKey Chain Horizon Hackathon 2026
         </p>
       </div>
     </footer>
