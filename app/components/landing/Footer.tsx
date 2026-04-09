@@ -5,7 +5,7 @@ import { EXPLORER_URL } from '../../lib/constants'
 
 const links = [
   { label: 'ENTER MARKET', href: '/trade', external: false },
-  { label: 'GITHUB', href: 'https://github.com', external: true },
+  { label: 'GITHUB', href: 'https://github.com/HarvestDEX', external: true },
   { label: 'DORAHACKS', href: 'https://dorahacks.io/hackathon/2045', external: true },
   { label: 'EXPLORER', href: EXPLORER_URL, external: true },
 ]

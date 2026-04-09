@@ -248,7 +248,7 @@ export default function Hero() {
             </button>
           </Link>
           <a
-            href="https://github.com"
+            href="https://github.com/HarvestDEX"
             target="_blank"
             rel="noopener noreferrer"
           >
