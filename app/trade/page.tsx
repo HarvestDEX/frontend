@@ -111,7 +111,7 @@ export default function TradePage() {
     try {
       const tx = await contracts.usdc.faucet()
       await tx.wait()
-      setFaucetSuccess('You claimed 1000 gold from the well!')
+      setFaucetSuccess('You claimed 1000 USDC!')
       refreshBalance()
     } catch (err: any) {
       if (err?.code === 4001 || err?.info?.error?.code === 4001) {
@@ -276,15 +276,15 @@ export default function TradePage() {
               style={{ imageRendering: 'pixelated', flexShrink: 0 }}
             />
             <div>
-              <p className="pixel-font text-[9px]" style={{ color: 'var(--gold)' }}>VILLAGE WELL</p>
+              <p className="pixel-font text-[9px]" style={{ color: 'var(--gold)' }}>USDC FAUCET</p>
               <p style={{ color: 'var(--muted)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>
-                Claim 1000 gold per day
+                Claim 1000 USDC per day
               </p>
-              {/* Gold balance */}
+              {/* USDC balance */}
               <div className="flex items-center gap-1 mt-1">
                 <img
-                  src="/sprites/gold-coin.png"
-                  alt="gold"
+                  src="/sprites/usdc-coin.png"
+                  alt="usdc"
                   width={18}
                   height={18}
                   style={{ imageRendering: 'pixelated' }}
@@ -293,7 +293,7 @@ export default function TradePage() {
                   {(Number(usdcBalance) / 1e6).toFixed(2)}
                 </span>
                 <span className="pixel-font text-[7px]" style={{ color: 'var(--gold)', marginLeft: '2px' }}>
-                  GOLD
+                  USDC
                 </span>
               </div>
             </div>
@@ -308,7 +308,7 @@ export default function TradePage() {
                 className="pixel-btn pixel-btn-primary"
                 style={{ opacity: faucetLoading || !contracts ? 0.6 : 1 }}
               >
-                {faucetLoading ? 'DRAWING WATER...' : '💧 CLAIM 1000 GOLD'}
+                {faucetLoading ? 'CLAIMING...' : '💧 CLAIM 1000 USDC'}
               </button>
               {!walletAddress && (
                 <span style={{ color: 'var(--muted)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>

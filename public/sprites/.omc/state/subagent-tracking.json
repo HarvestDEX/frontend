@@ -15,10 +15,19 @@
       "started_at": "2026-04-09T04:58:51.048Z",
       "parent_mode": "none",
       "status": "running"
+    },
+    {
+      "agent_id": "af2e6bd908106042a",
+      "agent_type": "oh-my-claudecode:executor-high",
+      "started_at": "2026-04-13T05:01:28.601Z",
+      "parent_mode": "none",
+      "status": "completed",
+      "completed_at": "2026-04-13T05:05:43.125Z",
+      "duration_ms": 254524
     }
   ],
-  "total_spawned": 2,
-  "total_completed": 1,
+  "total_spawned": 3,
+  "total_completed": 2,
   "total_failed": 0,
-  "last_updated": "2026-04-09T05:02:49.718Z"
+  "last_updated": "2026-04-13T05:05:43.236Z"
 }

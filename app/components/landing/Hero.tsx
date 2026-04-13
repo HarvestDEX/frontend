@@ -94,28 +94,39 @@ export default function Hero() {
         }}
       />
 
+      {/* Farm ground tiles */}
+      <div
+        className="absolute bottom-0 left-0 right-0 pointer-events-none"
+        style={{
+          height: '96px',
+          backgroundImage: 'url(/sprites/tileset-farm.png)',
+          backgroundRepeat: 'repeat-x',
+          backgroundSize: '128px 128px',
+          backgroundPosition: 'bottom',
+          imageRendering: 'pixelated',
+        }}
+      />
+
+      {/* Farmhouse left */}
+      <div className="absolute pointer-events-none hidden md:block" style={{ bottom: '48px', left: '5%' }}>
+        <img src="/sprites/farmhouse.png" alt="farmhouse" width={128} height={128} style={{ imageRendering: 'pixelated', opacity: 0.9 }} />
+      </div>
+
+      {/* Windmill right */}
+      <div className="absolute pointer-events-none hidden md:block" style={{ bottom: '48px', right: '5%' }}>
+        <img src="/sprites/windmill.png" alt="windmill" width={96} height={96} style={{ imageRendering: 'pixelated', opacity: 0.9 }} />
+      </div>
+
       {/* Left trees */}
       <div className="absolute bottom-0 left-0 pointer-events-none flex items-end">
         <img src="/sprites/tree.png" alt="" width={48} height={64} style={{ imageRendering: 'pixelated', opacity: 0.9 }} />
-        <img src="/sprites/tree.png" alt="" width={48} height={64} style={{ imageRendering: 'pixelated', opacity: 0.7, marginLeft: '-8px', marginBottom: '-8px' }} />
         <img src="/sprites/bush.png" alt="" width={32} height={32} style={{ imageRendering: 'pixelated', opacity: 0.8 }} />
       </div>
 
       {/* Right trees */}
       <div className="absolute bottom-0 right-0 pointer-events-none flex items-end">
         <img src="/sprites/bush.png" alt="" width={32} height={32} style={{ imageRendering: 'pixelated', opacity: 0.8 }} />
-        <img src="/sprites/tree.png" alt="" width={48} height={64} style={{ imageRendering: 'pixelated', opacity: 0.7, marginLeft: '-8px', marginBottom: '-8px' }} />
         <img src="/sprites/tree.png" alt="" width={48} height={64} style={{ imageRendering: 'pixelated', opacity: 0.9 }} />
-      </div>
-
-      {/* Signpost left */}
-      <div className="absolute pointer-events-none hidden md:block" style={{ bottom: '32px', left: '10%' }}>
-        <img src="/sprites/signpost.png" alt="" width={48} height={64} style={{ imageRendering: 'pixelated', opacity: 0.7 }} />
-      </div>
-
-      {/* Well right */}
-      <div className="absolute pointer-events-none hidden md:block" style={{ bottom: '32px', right: '10%' }}>
-        <img src="/sprites/well.png" alt="" width={48} height={56} style={{ imageRendering: 'pixelated', opacity: 0.7 }} />
       </div>
 
       {/* Main content */}
@@ -191,7 +202,7 @@ export default function Hero() {
             lineHeight: '1.6',
           }}
         >
-          A pixel farming marketplace where you trade real crops, open positions at the barn, and earn gold from every harvest.
+          A pixel farming marketplace where you trade real crops, open positions at the barn, and earn USDC from every harvest.
         </p>
 
         {/* Inventory bar — 4 commodity sprites */}
@@ -237,6 +248,17 @@ export default function Hero() {
           ))}
         </div>
 
+        {/* Welcome gate */}
+        <div className="flex justify-center mb-6">
+          <img
+            src="/sprites/welcome-gate.png"
+            alt="welcome gate"
+            width={128}
+            height={96}
+            style={{ imageRendering: 'pixelated', filter: 'drop-shadow(0 4px 0px rgba(0,0,0,0.5))' }}
+          />
+        </div>
+
         {/* RPG-style CTA buttons */}
         <div className="flex justify-center gap-4 flex-wrap">
           <Link href="/trade">
@@ -266,16 +288,6 @@ export default function Hero() {
             </button>
           </a>
         </div>
-
-        {/* Ground strip */}
-        <div
-          className="absolute bottom-0 left-0 right-0"
-          style={{
-            height: '28px',
-            background: '#1a3a10',
-            borderTop: '4px solid #2a5a18',
-          }}
-        />
       </div>
     </section>
   )

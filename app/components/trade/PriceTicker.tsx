@@ -106,8 +106,8 @@ export default function PriceTicker() {
             />
             <span className="pixel-font text-[7px]" style={{ color: '#b08030' }}>{c.symbol}</span>
             <img
-              src="/sprites/gold-coin.png"
-              alt="gold"
+              src="/sprites/usdc-coin.png"
+              alt="usdc"
               width={12}
               height={12}
               style={{ imageRendering: 'pixelated' }}

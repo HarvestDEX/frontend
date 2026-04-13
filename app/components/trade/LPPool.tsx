@@ -26,8 +26,8 @@ function formatLpPrice(raw: bigint): string {
 function GoldCoin({ size = 16 }: { size?: number }) {
   return (
     <img
-      src="/sprites/gold-coin.png"
-      alt="gold"
+      src="/sprites/usdc-coin.png"
+      alt="usdc"
       width={size}
       height={size}
       style={{ imageRendering: 'pixelated', display: 'inline', verticalAlign: 'middle' }}
@@ -118,7 +118,7 @@ export default function LPPool({ contracts, signer, onTxSuccess }: Props) {
       const depositTx = await contracts.lp.deposit(usdcAmt)
       await depositTx.wait()
 
-      setDepositSuccess(`Deposited ${depositAmount} gold into the treasury!`)
+      setDepositSuccess(`Deposited ${depositAmount} USDC into the treasury!`)
       setDepositAmount('')
       onTxSuccess()
       fetchStats()
@@ -177,7 +177,7 @@ export default function LPPool({ contracts, signer, onTxSuccess }: Props) {
         <div>
           <h2 className="pixel-font text-[11px]" style={{ color: 'var(--gold)' }}>THE TREASURY</h2>
           <p style={{ color: 'var(--muted)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>
-            Deposit gold, earn fees from all trades
+            Deposit USDC, earn fees from all trades
           </p>
         </div>
         <img src="/sprites/well.png" alt="" width={32} height={36} style={{ imageRendering: 'pixelated', marginLeft: 'auto' }} />
@@ -197,14 +197,14 @@ export default function LPPool({ contracts, signer, onTxSuccess }: Props) {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             <StatBox
-              label="TREASURY GOLD"
+              label="TREASURY USDC"
               value={`${formatUsdc(poolBalance)} USDC`}
               icon={<GoldCoin size={18} />}
             />
             <StatBox
               label="SHARE PRICE"
               value={`$${formatLpPrice(lpPrice)}`}
-              icon={<img src="/sprites/gold-coin.png" alt="" width={16} height={16} style={{ imageRendering: 'pixelated' }} />}
+              icon={<img src="/sprites/usdc-coin.png" alt="" width={16} height={16} style={{ imageRendering: 'pixelated' }} />}
             />
             <StatBox
               label="TOTAL FEES EARNED"
@@ -230,7 +230,7 @@ export default function LPPool({ contracts, signer, onTxSuccess }: Props) {
         <PixelCard>
           <div className="flex items-center gap-2 mb-3 pb-2" style={{ borderBottom: '2px solid var(--border)' }}>
             <GoldCoin size={20} />
-            <span className="pixel-font text-[10px]" style={{ color: 'var(--accent)' }}>DEPOSIT GOLD</span>
+            <span className="pixel-font text-[10px]" style={{ color: 'var(--accent)' }}>DEPOSIT USDC</span>
           </div>
 
           <div className="flex flex-col gap-3">
@@ -291,7 +291,7 @@ export default function LPPool({ contracts, signer, onTxSuccess }: Props) {
               className="pixel-btn pixel-btn-primary w-full"
               style={{ opacity: depositLoading || !depositAmount ? 0.6 : 1 }}
             >
-              {depositLoading ? 'DEPOSITING...' : 'DEPOSIT GOLD'}
+              {depositLoading ? 'DEPOSITING...' : 'DEPOSIT USDC'}
             </button>
           </div>
         </PixelCard>
@@ -300,7 +300,7 @@ export default function LPPool({ contracts, signer, onTxSuccess }: Props) {
         <PixelCard>
           <div className="flex items-center gap-2 mb-3 pb-2" style={{ borderBottom: '2px solid var(--border)' }}>
             <img src="/sprites/treasure-chest.png" alt="" width={20} height={20} style={{ imageRendering: 'pixelated' }} />
-            <span className="pixel-font text-[10px]" style={{ color: 'var(--red)' }}>WITHDRAW GOLD</span>
+            <span className="pixel-font text-[10px]" style={{ color: 'var(--red)' }}>WITHDRAW USDC</span>
           </div>
 
           <div className="flex flex-col gap-3">
@@ -366,7 +366,7 @@ export default function LPPool({ contracts, signer, onTxSuccess }: Props) {
               className="pixel-btn pixel-btn-red w-full"
               style={{ opacity: withdrawLoading || !withdrawAmount || userLpBalance === BigInt(0) ? 0.6 : 1 }}
             >
-              {withdrawLoading ? 'WITHDRAWING...' : 'WITHDRAW GOLD'}
+              {withdrawLoading ? 'WITHDRAWING...' : 'WITHDRAW USDC'}
             </button>
           </div>
         </PixelCard>

@@ -58,5 +58,5 @@ export const CONTRACT_ADDRESSES = {
   positionManager: process.env.NEXT_PUBLIC_POSITION_MANAGER_ADDRESS || '',
 }
 
-export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '/api'
+export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.endpx.cloud'
 export const EXPLORER_URL = process.env.NEXT_PUBLIC_EXPLORER_URL || 'https://testnet-explorer.hsk.xyz'

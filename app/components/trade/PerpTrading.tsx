@@ -45,8 +45,8 @@ function formatPnl(raw: bigint): string {
 function GoldCoin({ size = 16 }: { size?: number }) {
   return (
     <img
-      src="/sprites/gold-coin.png"
-      alt="gold"
+      src="/sprites/usdc-coin.png"
+      alt="usdc"
       width={size}
       height={size}
       style={{ imageRendering: 'pixelated', display: 'inline', verticalAlign: 'middle' }}
@@ -285,7 +285,7 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
 
           {/* Collateral */}
           <div>
-            <label className="pixel-font text-[7px]" style={{ color: 'var(--muted)' }}>GOLD WAGER</label>
+            <label className="pixel-font text-[7px]" style={{ color: 'var(--muted)' }}>USDC WAGER</label>
             <div className="flex items-center gap-2 mt-1">
               <GoldCoin size={24} />
               <input

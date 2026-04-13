@@ -90,7 +90,7 @@ export default function Commodities() {
             }}
           >
             <img
-              src="/sprites/gold-coin.png"
+              src="/sprites/usdc-coin.png"
               alt="coin"
               width={24}
               height={24}
@@ -107,7 +107,7 @@ export default function Commodities() {
               TODAY&apos;S HARVEST
             </h2>
             <img
-              src="/sprites/gold-coin.png"
+              src="/sprites/usdc-coin.png"
               alt="coin"
               width={24}
               height={24}
@@ -214,7 +214,7 @@ export default function Commodities() {
                 {commodity.fullName}
               </div>
 
-              {/* Price row with gold coin */}
+              {/* Price row with USDC coin */}
               <div
                 style={{
                   display: 'flex',
@@ -228,8 +228,8 @@ export default function Commodities() {
                 }}
               >
                 <img
-                  src="/sprites/gold-coin.png"
-                  alt="gold"
+                  src="/sprites/usdc-coin.png"
+                  alt="usdc"
                   width={16}
                   height={16}
                   style={{ imageRendering: 'pixelated', flexShrink: 0 }}

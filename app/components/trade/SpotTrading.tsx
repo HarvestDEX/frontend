@@ -20,8 +20,8 @@ function formatUsdc(raw: bigint): string {
 function GoldCoin({ size = 16 }: { size?: number }) {
   return (
     <img
-      src="/sprites/gold-coin.png"
-      alt="gold"
+      src="/sprites/usdc-coin.png"
+      alt="usdc"
       width={size}
       height={size}
       style={{ imageRendering: 'pixelated', display: 'inline', verticalAlign: 'middle' }}
@@ -121,7 +121,7 @@ export default function SpotTrading({ contracts, signer, onTxSuccess }: Props) {
       const sellTx = await contracts.spot.sell(sellSymbol, tokenAmt)
       await sellTx.wait()
 
-      setSellSuccess(`Sold ${sellAmount} ${sellSymbol} for gold!`)
+      setSellSuccess(`Sold ${sellAmount} ${sellSymbol} for USDC!`)
       setSellAmount('')
       setSellPreview(null)
       onTxSuccess()
@@ -247,7 +247,7 @@ export default function SpotTrading({ contracts, signer, onTxSuccess }: Props) {
                   className="flex items-center justify-between pt-1"
                   style={{ borderTop: '1px dashed #7a5a20' }}
                 >
-                  <span className="pixel-font text-[7px]" style={{ color: '#b08030' }}>TOTAL GOLD</span>
+                  <span className="pixel-font text-[7px]" style={{ color: '#b08030' }}>TOTAL USDC</span>
                   <span style={{ color: 'var(--gold)', fontSize: '20px' }}>
                     <GoldCoin size={16} /> {formatUsdc(buyPreview.total)}
                   </span>
