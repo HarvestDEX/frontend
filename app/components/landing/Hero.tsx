@@ -196,21 +196,20 @@ export default function Hero() {
           <div style={{ flex: 1, height: '1px', background: 'linear-gradient(270deg, transparent, var(--border))' }} />
         </div>
 
-        {/* Farmer mascot — bigger */}
+        {/* Logo */}
         <div
           style={{
             animation: 'float 3s ease-in-out infinite',
             display: 'inline-block',
-            filter: 'drop-shadow(0 12px 8px rgba(0,0,0,0.7))',
             marginBottom: '20px',
           }}
         >
           <img
             src="/logo.png"
             alt="HarvestDEX"
-            width={96}
-            height={96}
-            style={{ imageRendering: 'pixelated', borderRadius: '50%' }}
+            width={80}
+            height={80}
+            style={{ imageRendering: 'pixelated' }}
           />
         </div>
 
