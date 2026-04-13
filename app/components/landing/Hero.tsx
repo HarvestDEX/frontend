@@ -3,39 +3,50 @@
 import Link from 'next/link'
 
 const commodityRow = [
-  { sprite: '/sprites/rice.png', symbol: 'RICE' },
-  { sprite: '/sprites/coffee.png', symbol: 'COFFEE' },
-  { sprite: '/sprites/corn.png', symbol: 'CORN' },
-  { sprite: '/sprites/cpo.png', symbol: 'CPO' },
+  { sprite: '/sprites/rice.png', symbol: 'RICE', color: '#f0c060' },
+  { sprite: '/sprites/coffee.png', symbol: 'COFFEE', color: '#c08040' },
+  { sprite: '/sprites/corn.png', symbol: 'CORN', color: '#f0e060' },
+  { sprite: '/sprites/cpo.png', symbol: 'CPO', color: '#80c060' },
 ]
 
-const floatKeyframes = `
+const heroKeyframes = `
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-}
-@keyframes sway {
-  0%, 100% { transform: rotate(-2deg); }
-  50% { transform: rotate(2deg); }
+  50% { transform: translateY(-12px); }
 }
 @keyframes twinkle {
-  0%, 100% { opacity: 0.2; }
-  50% { opacity: 0.8; }
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.7; }
 }
 @keyframes bounce-item {
   0%, 100% { transform: translateY(0px) scale(1); }
-  50% { transform: translateY(-4px) scale(1.05); }
+  50% { transform: translateY(-6px) scale(1.08); }
+}
+@keyframes glow-pulse {
+  0%, 100% { text-shadow: 4px 4px 0px #1a3a1a, 0 0 20px rgba(123,198,122,0.3); }
+  50% { text-shadow: 4px 4px 0px #1a3a1a, 0 0 40px rgba(123,198,122,0.6), 0 0 80px rgba(123,198,122,0.2); }
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 `
 
 const stars = [
-  { top: '8%', left: '12%', delay: '0s', size: 3 },
-  { top: '15%', left: '78%', delay: '0.5s', size: 2 },
-  { top: '25%', left: '55%', delay: '1.2s', size: 2 },
-  { top: '5%', left: '40%', delay: '0.8s', size: 3 },
-  { top: '18%', left: '88%', delay: '1.5s', size: 2 },
-  { top: '30%', left: '5%', delay: '0.3s', size: 2 },
-  { top: '12%', left: '65%', delay: '1.8s', size: 3 },
+  { top: '6%', left: '10%', delay: '0s', size: 3 },
+  { top: '12%', left: '75%', delay: '0.5s', size: 2 },
+  { top: '22%', left: '55%', delay: '1.2s', size: 2 },
+  { top: '4%', left: '38%', delay: '0.8s', size: 3 },
+  { top: '16%', left: '85%', delay: '1.5s', size: 2 },
+  { top: '28%', left: '4%', delay: '0.3s', size: 2 },
+  { top: '10%', left: '62%', delay: '1.8s', size: 3 },
+  { top: '3%', left: '52%', delay: '2.1s', size: 2 },
+  { top: '20%', left: '20%', delay: '0.6s', size: 2 },
+  { top: '8%', left: '90%', delay: '1.0s', size: 3 },
 ]
 
 export default function Hero() {
@@ -43,23 +54,31 @@ export default function Hero() {
     <section
       className="relative overflow-hidden"
       style={{
-        background: 'linear-gradient(180deg, #050d1a 0%, #0a1628 20%, #0f1a0f 55%, #1a2e1a 100%)',
-        paddingTop: '72px',
+        background: 'linear-gradient(180deg, #020810 0%, #06101e 25%, #0a1628 45%, #0d1a12 70%, #111e14 100%)',
+        paddingTop: '60px',
         paddingBottom: '0px',
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
-      <style>{floatKeyframes}</style>
+      <style>{heroKeyframes}</style>
 
-      {/* Pixel grid overlay */}
+      {/* Subtle pixel grid */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(74,124,89,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(74,124,89,0.04) 1px, transparent 1px)',
+            'linear-gradient(rgba(74,124,89,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(74,124,89,0.03) 1px, transparent 1px)',
           backgroundSize: '32px 32px',
+        }}
+      />
+
+      {/* Vignette overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse 70% 60% at 50% 45%, transparent 0%, rgba(2,8,16,0.6) 100%)',
         }}
       />
 
@@ -74,172 +93,183 @@ export default function Hero() {
             width: star.size,
             height: star.size,
             background: '#e8f5e8',
-            opacity: 0.4,
-            animation: `twinkle ${1.5 + i * 0.4}s ease-in-out ${star.delay} infinite`,
+            animation: `twinkle ${1.5 + i * 0.3}s ease-in-out ${star.delay} infinite`,
           }}
         />
       ))}
 
-      {/* Moon */}
+      {/* Moon with glow */}
       <div
         className="absolute pointer-events-none"
         style={{
-          top: '6%',
-          right: '8%',
-          width: '28px',
-          height: '28px',
+          top: '8%',
+          right: '12%',
+          width: '20px',
+          height: '20px',
           background: '#f0c060',
-          boxShadow: '0 0 12px rgba(240,192,96,0.4)',
-          imageRendering: 'pixelated',
+          boxShadow: '0 0 20px rgba(240,192,96,0.5), 0 0 60px rgba(240,192,96,0.15)',
         }}
       />
 
-      {/* Farm ground tiles */}
+      {/* Dark ground silhouette */}
       <div
         className="absolute bottom-0 left-0 right-0 pointer-events-none"
         style={{
-          height: '96px',
-          backgroundImage: 'url(/sprites/tileset-farm.png)',
-          backgroundRepeat: 'repeat-x',
-          backgroundSize: '128px 128px',
-          backgroundPosition: 'bottom',
-          imageRendering: 'pixelated',
+          height: '80px',
+          background: 'linear-gradient(180deg, transparent 0%, #060e06 30%, #040a04 100%)',
         }}
       />
 
-      {/* Farmhouse left */}
-      <div className="absolute pointer-events-none hidden md:block" style={{ bottom: '48px', left: '5%' }}>
-        <img src="/sprites/farmhouse.png" alt="farmhouse" width={128} height={128} style={{ imageRendering: 'pixelated', opacity: 0.9 }} />
+      {/* Silhouette trees left */}
+      <div className="absolute bottom-0 left-0 pointer-events-none hidden md:flex items-end" style={{ opacity: 0.3 }}>
+        <div style={{ width: '40px', height: '56px', background: '#0a140a', marginRight: '-4px' }} />
+        <div style={{ width: '32px', height: '40px', background: '#0a140a', borderRadius: '50% 50% 0 0' }} />
+        <div style={{ width: '48px', height: '72px', background: '#081008', marginLeft: '-8px' }} />
       </div>
 
-      {/* Windmill right */}
-      <div className="absolute pointer-events-none hidden md:block" style={{ bottom: '48px', right: '5%' }}>
-        <img src="/sprites/windmill.png" alt="windmill" width={96} height={96} style={{ imageRendering: 'pixelated', opacity: 0.9 }} />
-      </div>
-
-      {/* Left trees */}
-      <div className="absolute bottom-0 left-0 pointer-events-none flex items-end">
-        <img src="/sprites/tree.png" alt="" width={48} height={64} style={{ imageRendering: 'pixelated', opacity: 0.9 }} />
-        <img src="/sprites/bush.png" alt="" width={32} height={32} style={{ imageRendering: 'pixelated', opacity: 0.8 }} />
-      </div>
-
-      {/* Right trees */}
-      <div className="absolute bottom-0 right-0 pointer-events-none flex items-end">
-        <img src="/sprites/bush.png" alt="" width={32} height={32} style={{ imageRendering: 'pixelated', opacity: 0.8 }} />
-        <img src="/sprites/tree.png" alt="" width={48} height={64} style={{ imageRendering: 'pixelated', opacity: 0.9 }} />
+      {/* Silhouette trees right */}
+      <div className="absolute bottom-0 right-0 pointer-events-none hidden md:flex items-end" style={{ opacity: 0.3 }}>
+        <div style={{ width: '48px', height: '68px', background: '#081008', marginRight: '-8px' }} />
+        <div style={{ width: '32px', height: '36px', background: '#0a140a', borderRadius: '50% 50% 0 0' }} />
+        <div style={{ width: '44px', height: '60px', background: '#0a140a' }} />
       </div>
 
       {/* Main content */}
-      <div className="relative flex-1 flex flex-col items-center justify-center max-w-4xl mx-auto px-6 text-center pb-20">
+      <div className="relative flex-1 flex flex-col items-center justify-center max-w-3xl mx-auto px-6 text-center" style={{ paddingBottom: '80px' }}>
 
-        {/* Game badge */}
+        {/* HashKey Chain badge */}
         <div
-          className="inline-block mb-6 px-4 py-2 text-xs"
           style={{
-            background: 'var(--surface)',
-            border: '2px solid var(--gold)',
-            color: 'var(--gold)',
-            fontFamily: "'Press Start 2P', monospace",
-            boxShadow: '0 -2px 0 0 var(--gold), 0 2px 0 0 var(--gold), -2px 0 0 0 var(--gold), 2px 0 0 0 var(--gold)',
-            fontSize: '8px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'rgba(240,192,96,0.08)',
+            border: '1px solid rgba(240,192,96,0.25)',
+            padding: '6px 16px',
+            marginBottom: '24px',
+            animation: 'fade-in 0.6s ease-out forwards',
           }}
         >
-          ★ PRESS START ★
+          <div style={{ width: '6px', height: '6px', background: 'var(--accent)', flexShrink: 0 }} />
+          <span
+            style={{
+              fontFamily: "'Press Start 2P', monospace",
+              fontSize: '7px',
+              color: 'var(--gold)',
+              letterSpacing: '1px',
+            }}
+          >
+            BUILT ON HASHKEY CHAIN
+          </span>
+          <div style={{ width: '6px', height: '6px', background: 'var(--accent)', flexShrink: 0 }} />
         </div>
 
         {/* Title */}
         <h1
-          className="pixel-font mb-2"
+          className="pixel-font"
           style={{
-            fontSize: 'clamp(28px, 6vw, 56px)',
+            fontSize: 'clamp(32px, 7vw, 64px)',
             color: 'var(--accent)',
-            textShadow: '4px 4px 0px #1a3a1a, 0 0 24px rgba(123,198,122,0.4)',
-            lineHeight: '1.4',
+            animation: 'glow-pulse 4s ease-in-out infinite',
+            lineHeight: '1.3',
+            marginBottom: '12px',
           }}
         >
           HarvestDEX
         </h1>
 
-        {/* Subtitle */}
-        <p
-          className="pixel-font mb-8"
-          style={{
-            fontSize: 'clamp(8px, 1.5vw, 12px)',
-            color: 'var(--gold)',
-            lineHeight: '2.2',
-            textShadow: '2px 2px 0px #6b4a00',
-          }}
-        >
-          Welcome to the Harvest Market
-        </p>
+        {/* Subtitle with decorative line */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+          <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, transparent, var(--border))' }} />
+          <p
+            className="pixel-font"
+            style={{
+              fontSize: 'clamp(7px, 1.2vw, 10px)',
+              color: 'var(--gold)',
+              lineHeight: '2',
+              textShadow: '2px 2px 0px #6b4a00',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            TRADE REAL CROPS ON-CHAIN
+          </p>
+          <div style={{ flex: 1, height: '1px', background: 'linear-gradient(270deg, transparent, var(--border))' }} />
+        </div>
 
-        {/* Farmer mascot */}
+        {/* Farmer mascot — bigger */}
         <div
-          className="mb-8"
           style={{
             animation: 'float 3s ease-in-out infinite',
             display: 'inline-block',
-            filter: 'drop-shadow(0 8px 0px rgba(0,0,0,0.5))',
+            filter: 'drop-shadow(0 12px 8px rgba(0,0,0,0.7))',
+            marginBottom: '20px',
           }}
         >
           <img
             src="/sprites/farmer-south.png"
             alt="Farmer"
-            width={68}
-            height={68}
+            width={88}
+            height={88}
             style={{ imageRendering: 'pixelated' }}
           />
         </div>
 
         {/* Description */}
         <p
-          className="mb-8"
           style={{
-            fontSize: '20px',
+            fontSize: '22px',
             color: 'var(--muted)',
             fontFamily: "'VT323', monospace",
-            maxWidth: '440px',
-            lineHeight: '1.6',
+            maxWidth: '500px',
+            lineHeight: '1.5',
+            marginBottom: '28px',
+            animation: 'slide-up 0.8s ease-out 0.2s backwards',
           }}
         >
-          A pixel farming marketplace where you trade real crops, open positions at the barn, and earn USDC from every harvest.
+          Spot trade agricultural commodities, open leveraged long/short positions, and earn USDC fees as a liquidity provider.
         </p>
 
         {/* Inventory bar — 4 commodity sprites */}
         <div
-          className="flex justify-center gap-3 mb-10 flex-wrap"
+          className="flex justify-center gap-2 flex-wrap"
           style={{
-            background: 'rgba(10,18,10,0.7)',
+            background: 'rgba(5,10,5,0.8)',
             border: '2px solid var(--border)',
-            boxShadow: '0 -2px 0 0 var(--border), 0 2px 0 0 var(--border), -2px 0 0 0 var(--border), 2px 0 0 0 var(--border)',
-            padding: '12px 20px',
+            boxShadow: '0 -2px 0 0 var(--border), 0 2px 0 0 var(--border), -2px 0 0 0 var(--border), 2px 0 0 0 var(--border), inset 0 0 30px rgba(0,0,0,0.5)',
+            padding: '10px 16px',
             display: 'inline-flex',
+            marginBottom: '32px',
+            animation: 'slide-up 0.8s ease-out 0.4s backwards',
           }}
         >
-          {commodityRow.map(({ sprite, symbol }, idx) => (
+          {commodityRow.map(({ sprite, symbol, color }, idx) => (
             <div
               key={symbol}
               className="flex flex-col items-center gap-1"
               style={{
-                padding: '8px 12px',
-                background: 'var(--card)',
+                padding: '8px 14px',
+                background: 'rgba(36,51,36,0.6)',
                 border: '2px solid var(--border)',
-                animation: `bounce-item ${2 + idx * 0.3}s ease-in-out ${idx * 0.2}s infinite`,
-                minWidth: '64px',
+                animation: `bounce-item ${2.2 + idx * 0.3}s ease-in-out ${idx * 0.15}s infinite`,
+                minWidth: '68px',
+                cursor: 'default',
+                transition: 'border-color 0.15s',
               }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = color }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)' }}
             >
               <img
                 src={sprite}
                 alt={symbol}
-                width={40}
-                height={40}
+                width={44}
+                height={44}
                 style={{ imageRendering: 'pixelated' }}
               />
               <span
                 style={{
                   fontFamily: "'Press Start 2P', monospace",
                   fontSize: '6px',
-                  color: 'var(--gold)',
+                  color: color,
                 }}
               >
                 {symbol}
@@ -248,25 +278,21 @@ export default function Hero() {
           ))}
         </div>
 
-        {/* Welcome gate */}
-        <div className="flex justify-center mb-6">
-          <img
-            src="/sprites/welcome-gate.png"
-            alt="welcome gate"
-            width={128}
-            height={96}
-            style={{ imageRendering: 'pixelated', filter: 'drop-shadow(0 4px 0px rgba(0,0,0,0.5))' }}
-          />
-        </div>
-
-        {/* RPG-style CTA buttons */}
-        <div className="flex justify-center gap-4 flex-wrap">
+        {/* CTA buttons */}
+        <div
+          className="flex justify-center gap-4 flex-wrap"
+          style={{ animation: 'slide-up 0.8s ease-out 0.6s backwards' }}
+        >
           <Link href="/trade">
             <button
               className="pixel-btn pixel-btn-primary"
-              style={{ fontSize: '10px', padding: '12px 24px' }}
+              style={{
+                fontSize: '11px',
+                padding: '14px 32px',
+                letterSpacing: '1px',
+              }}
             >
-              ▶ ENTER MARKET
+              ENTER MARKET
             </button>
           </Link>
           <a
@@ -277,16 +303,47 @@ export default function Hero() {
             <button
               className="pixel-btn"
               style={{
-                background: 'transparent',
-                color: 'var(--white)',
+                background: 'rgba(26,46,26,0.6)',
+                color: 'var(--muted)',
                 borderColor: 'var(--border)',
-                fontSize: '10px',
-                padding: '12px 24px',
+                fontSize: '11px',
+                padding: '14px 32px',
+                letterSpacing: '1px',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--white)'
+                e.currentTarget.style.borderColor = 'var(--accent)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--muted)'
+                e.currentTarget.style.borderColor = 'var(--border)'
               }}
             >
-              📜 VIEW MAP
+              VIEW SOURCE
             </button>
           </a>
+        </div>
+
+        {/* Scroll indicator */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '6px',
+            animation: 'float 2s ease-in-out infinite',
+            opacity: 0.4,
+          }}
+        >
+          <span style={{ fontFamily: "'VT323', monospace", fontSize: '14px', color: 'var(--muted)' }}>
+            scroll
+          </span>
+          <div style={{ width: '2px', height: '12px', background: 'var(--muted)' }} />
+          <div style={{ width: '8px', height: '8px', borderRight: '2px solid var(--muted)', borderBottom: '2px solid var(--muted)', transform: 'rotate(45deg)', marginTop: '-6px' }} />
         </div>
       </div>
     </section>
