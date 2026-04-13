@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { COMMODITIES, BACKEND_URL } from '../../lib/constants'
+import { COMMODITIES } from '../../lib/constants'
 
 interface Prices {
   RICE?: number
@@ -21,7 +21,7 @@ export default function PriceMarquee() {
   const [prices, setPrices] = useState<Prices | null>(null)
 
   useEffect(() => {
-    fetch(`${BACKEND_URL}/v1/prices`)
+    fetch('/api/v1/prices')
       .then((r) => r.json())
       .then((data) => setPrices(data))
       .catch(() => {})

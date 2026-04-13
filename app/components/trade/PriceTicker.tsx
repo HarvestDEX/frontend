@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { COMMODITIES, BACKEND_URL } from '../../lib/constants'
+import { COMMODITIES } from '../../lib/constants'
 
 interface PriceData {
   RICE: number
@@ -18,7 +18,7 @@ export default function PriceTicker() {
 
   async function fetchPrices() {
     try {
-      const res = await fetch(`${BACKEND_URL}/v1/prices`)
+      const res = await fetch('/api/v1/prices')
       if (!res.ok) throw new Error('fetch failed')
       const data: PriceData = await res.json()
       setPrices(data)

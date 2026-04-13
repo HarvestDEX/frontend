@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { COMMODITIES, BACKEND_URL } from '../../lib/constants'
+import { COMMODITIES } from '../../lib/constants'
 
 type CommoditySymbol = 'RICE' | 'COFFEE' | 'CORN' | 'CPO'
 
