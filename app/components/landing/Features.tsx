@@ -1,3 +1,5 @@
+'use client'
+
 const features = [
   {
     sprite: '/sprites/market-stall.png',
@@ -43,7 +45,6 @@ export default function Features() {
       style={{
         background: 'var(--bg)',
         padding: '80px 24px',
-        borderTop: '4px solid var(--border)',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -135,6 +136,16 @@ export default function Features() {
                 alignItems: 'flex-start',
                 gap: '16px',
                 position: 'relative',
+                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                cursor: 'default',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = `0 -2px 0 0 #6b4020, 0 4px 0 0 #1a0c04, -2px 0 0 0 #6b4020, 2px 0 0 0 #1a0c04, 0 0 16px 2px ${tagColor}33`
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 -2px 0 0 #6b4020, 0 2px 0 0 #1a0c04, -2px 0 0 0 #6b4020, 2px 0 0 0 #1a0c04'
               }}
             >
               {/* Corner pin */}

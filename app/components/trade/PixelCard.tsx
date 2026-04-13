@@ -24,12 +24,12 @@ export default function PixelCard({
       }}
       onMouseEnter={(e) => {
         const el = e.currentTarget
-        el.style.transform = 'scale(1.01)'
-        el.style.boxShadow = `0 0 12px 2px var(--accent), 0 -2px 0 0 var(--border), 0 2px 0 0 var(--border), -2px 0 0 0 var(--border), 2px 0 0 0 var(--border)`
+        el.style.transform = 'translateY(-1px)'
+        el.style.boxShadow = `0 0 12px 1px rgba(123,198,122,0.15), 0 -2px 0 0 var(--border), 0 2px 0 0 var(--border), -2px 0 0 0 var(--border), 2px 0 0 0 var(--border)`
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget
-        el.style.transform = 'scale(1)'
+        el.style.transform = 'translateY(0)'
         el.style.boxShadow = `0 -2px 0 0 var(--border), 0 2px 0 0 var(--border), -2px 0 0 0 var(--border), 2px 0 0 0 var(--border)`
       }}
     >

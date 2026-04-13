@@ -44,7 +44,7 @@ export default function Hero() {
       className="relative overflow-hidden"
       style={{
         background: 'linear-gradient(180deg, #050d1a 0%, #0a1628 20%, #0f1a0f 55%, #1a2e1a 100%)',
-        paddingTop: '60px',
+        paddingTop: '72px',
         paddingBottom: '0px',
         minHeight: '100vh',
         display: 'flex',

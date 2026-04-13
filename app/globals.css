@@ -19,6 +19,10 @@
 
 * { box-sizing: border-box; image-rendering: pixelated; }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background-color: var(--bg);
   color: var(--white);
@@ -26,11 +30,17 @@ body {
   font-size: 18px;
 }
 
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
 h1, h2, h3, .pixel-font {
   font-family: 'Press Start 2P', monospace;
   line-height: 1.8;
 }
 
+/* ── Pixel Card ─────────────────────────────────────── */
 .pixel-card {
   background: var(--card);
   border: 2px solid var(--border);
@@ -42,6 +52,7 @@ h1, h2, h3, .pixel-font {
     2px 0 0 0 var(--border);
 }
 
+/* ── Pixel Buttons ──────────────────────────────────── */
 .pixel-btn {
   font-family: 'Press Start 2P', monospace;
   font-size: 10px;
@@ -49,6 +60,12 @@ h1, h2, h3, .pixel-font {
   border: 2px solid;
   cursor: pointer;
   transition: none;
+  position: relative;
+}
+
+.pixel-btn:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.5);
 }
 
 .pixel-btn-primary {
@@ -58,12 +75,13 @@ h1, h2, h3, .pixel-font {
   box-shadow: inset -2px -2px 0 0 #2a4c2a, inset 2px 2px 0 0 #9be09a;
 }
 
-.pixel-btn-primary:hover {
+.pixel-btn-primary:hover:not(:disabled) {
   background: #9be09a;
 }
 
-.pixel-btn-primary:active {
+.pixel-btn-primary:active:not(:disabled) {
   box-shadow: inset 2px 2px 0 0 #2a4c2a, inset -2px -2px 0 0 #9be09a;
+  transform: translateY(1px);
 }
 
 .pixel-btn-red {
@@ -73,8 +91,13 @@ h1, h2, h3, .pixel-font {
   box-shadow: inset -2px -2px 0 0 #a03030, inset 2px 2px 0 0 #f08080;
 }
 
-.pixel-btn-red:hover {
+.pixel-btn-red:hover:not(:disabled) {
   background: #f08080;
+}
+
+.pixel-btn-red:active:not(:disabled) {
+  box-shadow: inset 2px 2px 0 0 #a03030, inset -2px -2px 0 0 #f08080;
+  transform: translateY(1px);
 }
 
 .pixel-btn-blue {
@@ -84,14 +107,21 @@ h1, h2, h3, .pixel-font {
   box-shadow: inset -2px -2px 0 0 #3060a0, inset 2px 2px 0 0 #80b0f0;
 }
 
-.pixel-btn-blue:hover {
+.pixel-btn-blue:hover:not(:disabled) {
   background: #80b0f0;
 }
 
+.pixel-btn-blue:active:not(:disabled) {
+  box-shadow: inset 2px 2px 0 0 #3060a0, inset -2px -2px 0 0 #80b0f0;
+  transform: translateY(1px);
+}
+
+/* ── Price Tags ─────────────────────────────────────── */
 .price-up   { color: var(--accent); }
 .price-down { color: var(--red); }
 .price-gold { color: var(--gold); font-family: 'VT323', monospace; font-size: 24px; }
 
+/* ── Pixel Input ────────────────────────────────────── */
 .pixel-input {
   background: var(--surface);
   border: 2px solid var(--border);
@@ -101,12 +131,63 @@ h1, h2, h3, .pixel-font {
   padding: 8px 12px;
   outline: none;
   width: 100%;
+  transition: border-color 0.15s;
 }
 
 .pixel-input:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
 }
 
-::-webkit-scrollbar { width: 8px; }
+.pixel-input::placeholder {
+  color: var(--muted);
+  opacity: 0.5;
+}
+
+/* ── Scrollbar ──────────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--surface); }
-::-webkit-scrollbar-thumb { background: var(--border); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ── Marquee Animation ──────────────────────────────── */
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  display: flex;
+  animation: marquee 30s linear infinite;
+  width: max-content;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+/* ── Fade-in Animation ──────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+/* ── Glass Navbar ────────────────────────────────────── */
+.pixel-navbar {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ── Number input arrows remove ──────────────────────── */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}

@@ -142,12 +142,38 @@ export default function TradePage() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)', position: 'relative', overflow: 'hidden' }}>
 
+      {/* Background pixel grid */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(74,124,89,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(74,124,89,0.03) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+          zIndex: 0,
+        }}
+      />
+
+      {/* Ground tileset at bottom */}
+      <div
+        className="fixed bottom-0 left-0 right-0 pointer-events-none"
+        style={{
+          height: '64px',
+          backgroundImage: 'url(/sprites/tileset-farm.png)',
+          backgroundRepeat: 'repeat-x',
+          backgroundSize: '128px 128px',
+          backgroundPosition: 'bottom',
+          imageRendering: 'pixelated',
+          opacity: 0.35,
+          zIndex: 0,
+        }}
+      />
+
       {/* Decorative edge sprites */}
-      <div style={{ position: 'fixed', bottom: '80px', left: '12px', zIndex: 0, opacity: 0.5, pointerEvents: 'none' }}>
+      <div className="hidden lg:block" style={{ position: 'fixed', bottom: '48px', left: '12px', zIndex: 0, opacity: 0.4, pointerEvents: 'none' }}>
         <img src="/sprites/tree.png" alt="" width={48} height={64} style={{ imageRendering: 'pixelated', display: 'block' }} />
         <img src="/sprites/bush.png" alt="" width={32} height={32} style={{ imageRendering: 'pixelated', display: 'block', marginTop: '4px' }} />
       </div>
-      <div style={{ position: 'fixed', bottom: '80px', right: '12px', zIndex: 0, opacity: 0.5, pointerEvents: 'none' }}>
+      <div className="hidden lg:block" style={{ position: 'fixed', bottom: '48px', right: '12px', zIndex: 0, opacity: 0.4, pointerEvents: 'none' }}>
         <img src="/sprites/tree.png" alt="" width={48} height={64} style={{ imageRendering: 'pixelated', display: 'block' }} />
         <img src="/sprites/bush.png" alt="" width={32} height={32} style={{ imageRendering: 'pixelated', display: 'block', marginTop: '4px', marginLeft: 'auto' }} />
       </div>

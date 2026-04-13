@@ -37,11 +37,15 @@ export default function Footer() {
       {/* Ground / grass strip at top of footer */}
       <div
         style={{
-          height: '20px',
-          background: '#1a3a10',
-          borderBottom: '4px solid #2a5a18',
+          height: '48px',
+          backgroundImage: 'url(/sprites/tileset-farm.png)',
+          backgroundRepeat: 'repeat-x',
+          backgroundSize: '128px 128px',
+          backgroundPosition: 'bottom',
+          imageRendering: 'pixelated',
           position: 'relative',
           overflow: 'hidden',
+          borderBottom: '4px solid #2a5a18',
         }}
       >
         {/* Walking farmer */}

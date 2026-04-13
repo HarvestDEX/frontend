@@ -149,6 +149,16 @@ export default function Commodities() {
                 textAlign: 'center',
                 position: 'relative',
                 overflow: 'hidden',
+                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                cursor: 'default',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-3px)'
+                e.currentTarget.style.boxShadow = `0 -2px 0 0 ${commodity.color}, 0 4px 0 0 ${commodity.color}, -2px 0 0 0 ${commodity.color}, 2px 0 0 0 ${commodity.color}, 0 0 20px 3px ${commodity.color}33`
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = `0 -2px 0 0 ${commodity.color}, 0 2px 0 0 ${commodity.color}, -2px 0 0 0 ${commodity.color}, 2px 0 0 0 ${commodity.color}`
               }}
             >
               {/* Item slot corner decoration */}
