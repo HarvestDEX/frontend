@@ -51,11 +51,11 @@ export const HASHKEY_TESTNET = {
 }
 
 export const CONTRACT_ADDRESSES = {
-  mockUSDC:        (process.env.NEXT_PUBLIC_MOCK_USDC_ADDRESS || '').trim(),
-  priceOracle:     (process.env.NEXT_PUBLIC_PRICE_ORACLE_ADDRESS || '').trim(),
-  spotMarket:      (process.env.NEXT_PUBLIC_SPOT_MARKET_ADDRESS || '').trim(),
-  liquidityPool:   (process.env.NEXT_PUBLIC_LIQUIDITY_POOL_ADDRESS || '').trim(),
-  positionManager: (process.env.NEXT_PUBLIC_POSITION_MANAGER_ADDRESS || '').trim(),
+  mockUSDC:        '0xf3c59dccc2371171bb6223d5bba30865544365f0',
+  priceOracle:     '0xd37b676a7a1be99862ed23d322855c87b3855905',
+  spotMarket:      '0x8e365f606f1b9c34c9da6433aab7a7580cf3e9b0',
+  liquidityPool:   '0x4b4cb1a442fb4fa70ac5e84c44c1f5166bc6c6a9',
+  positionManager: '0xc7a0f9a92dc749ab54154d6fc52b9fc83f96aecc',
 }
 
 export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.endpx.cloud'
