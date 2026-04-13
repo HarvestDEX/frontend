@@ -17,7 +17,7 @@ export default function Navbar() {
       className="pixel-navbar"
       style={{
         position: 'fixed',
-        top: 0,
+        top: '46px',
         left: 0,
         right: 0,
         zIndex: 100,

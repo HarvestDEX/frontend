@@ -41,11 +41,13 @@ export default function PriceMarquee() {
     <div
       style={{
         background: '#0a0e06',
-        borderTop: '3px solid var(--border)',
-        borderBottom: '3px solid var(--border)',
+        borderBottom: '2px solid var(--border)',
         overflow: 'hidden',
-        position: 'relative',
-        zIndex: 10,
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 150,
       }}
     >
       {/* Fade edges */}
