@@ -34,8 +34,8 @@ export default function PriceMarquee() {
     return val >= 10 ? val.toFixed(2) : val.toFixed(4)
   }
 
-  // Double the items for seamless loop
-  const items = [...TICKER_ITEMS, ...TICKER_ITEMS]
+  // Repeat items enough times to fill wide screens seamlessly
+  const items = [...TICKER_ITEMS, ...TICKER_ITEMS, ...TICKER_ITEMS, ...TICKER_ITEMS, ...TICKER_ITEMS, ...TICKER_ITEMS]
 
   return (
     <div
@@ -81,7 +81,7 @@ export default function PriceMarquee() {
           <div
             key={`${item.symbol}-${i}`}
             className="flex items-center gap-2 flex-shrink-0"
-            style={{ marginRight: '40px' }}
+            style={{ marginRight: '48px' }}
           >
             <img
               src={item.sprite}
