@@ -12,9 +12,8 @@ import PriceTicker from '../components/trade/PriceTicker'
 import PriceChart from '../components/trade/PriceChart'
 import SpotTrading from '../components/trade/SpotTrading'
 import PerpTrading from '../components/trade/PerpTrading'
-import LPPool from '../components/trade/LPPool'
 
-type Tab = 'spot' | 'perp' | 'lp'
+type Tab = 'spot' | 'perp'
 
 function truncateAddress(addr: string): string {
   return addr.slice(0, 6) + '...' + addr.slice(-4)
@@ -43,14 +42,6 @@ const TAB_CONFIG: {
     spriteW: 40,
     spriteH: 40,
     description: 'Long / Short quests',
-  },
-  {
-    key: 'lp',
-    label: 'TREASURY',
-    sprite: '/sprites/treasure-chest.png',
-    spriteW: 32,
-    spriteH: 32,
-    description: 'Earn from fees',
   },
 ]
 
@@ -151,30 +142,15 @@ export default function TradePage() {
         }}
       />
 
-      {/* Ground tileset at bottom */}
+      {/* Subtle dark ground gradient */}
       <div
         className="fixed bottom-0 left-0 right-0 pointer-events-none"
         style={{
-          height: '64px',
-          backgroundImage: 'url(/sprites/tileset-farm.png)',
-          backgroundRepeat: 'repeat-x',
-          backgroundSize: '128px 128px',
-          backgroundPosition: 'bottom',
-          imageRendering: 'pixelated',
-          opacity: 0.35,
+          height: '48px',
+          background: 'linear-gradient(180deg, transparent, rgba(0,0,0,0.3))',
           zIndex: 0,
         }}
       />
-
-      {/* Decorative edge sprites */}
-      <div className="hidden lg:block" style={{ position: 'fixed', bottom: '48px', left: '12px', zIndex: 0, opacity: 0.4, pointerEvents: 'none' }}>
-        <img src="/sprites/tree.png" alt="" width={48} height={64} style={{ imageRendering: 'pixelated', display: 'block' }} />
-        <img src="/sprites/bush.png" alt="" width={32} height={32} style={{ imageRendering: 'pixelated', display: 'block', marginTop: '4px' }} />
-      </div>
-      <div className="hidden lg:block" style={{ position: 'fixed', bottom: '48px', right: '12px', zIndex: 0, opacity: 0.4, pointerEvents: 'none' }}>
-        <img src="/sprites/tree.png" alt="" width={48} height={64} style={{ imageRendering: 'pixelated', display: 'block' }} />
-        <img src="/sprites/bush.png" alt="" width={32} height={32} style={{ imageRendering: 'pixelated', display: 'block', marginTop: '4px', marginLeft: 'auto' }} />
-      </div>
 
       {/* ── HEADER ─────────────────────────────────────────────────── */}
       <header
@@ -427,13 +403,6 @@ export default function TradePage() {
           )}
           {activeTab === 'perp' && (
             <PerpTrading
-              contracts={contracts}
-              signer={signer}
-              onTxSuccess={refreshBalance}
-            />
-          )}
-          {activeTab === 'lp' && (
-            <LPPool
               contracts={contracts}
               signer={signer}
               onTxSuccess={refreshBalance}

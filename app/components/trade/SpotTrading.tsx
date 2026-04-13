@@ -139,16 +139,6 @@ export default function SpotTrading({ contracts, signer, onTxSuccess }: Props) {
   const buyCommodity = COMMODITIES.find((c) => c.symbol === buySymbol)
   const sellCommodity = COMMODITIES.find((c) => c.symbol === sellSymbol)
 
-  if (!contracts) {
-    return (
-      <PixelCard icon="/sprites/market-stall.png" iconSize={48}>
-        <p className="pixel-font text-[8px]" style={{ color: 'var(--muted)' }}>
-          CONNECT WALLET TO ENTER THE STALL
-        </p>
-      </PixelCard>
-    )
-  }
-
   return (
     <div className="flex flex-col gap-3">
       {/* Section header */}

@@ -20,15 +20,6 @@ const features = [
     tagColor: '#e05050',
   },
   {
-    sprite: '/sprites/treasure-chest.png',
-    spriteW: 48,
-    spriteH: 48,
-    tag: 'REWARD',
-    title: 'TREASURE POOL',
-    description: 'Deposit USDC, earn 0.3% fees from all trades automatically.',
-    tagColor: '#f0c060',
-  },
-  {
     sprite: '/sprites/usdc-coin.png',
     spriteW: 32,
     spriteH: 32,

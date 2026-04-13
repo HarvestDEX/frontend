@@ -200,16 +200,6 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
 
   const selectedCommodity = COMMODITIES.find((c) => c.symbol === symbol)
 
-  if (!contracts) {
-    return (
-      <PixelCard icon="/sprites/barn.png" iconSize={48}>
-        <p className="pixel-font text-[8px]" style={{ color: 'var(--muted)' }}>
-          CONNECT WALLET TO ENTER THE BARN
-        </p>
-      </PixelCard>
-    )
-  }
-
   return (
     <div className="flex flex-col gap-4">
       {/* Section header */}
