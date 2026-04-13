@@ -2,8 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi'
+import { injected } from 'wagmi/connectors'
 import { ethers } from 'ethers'
-import { connectWallet, getContracts } from '../lib/contracts'
+import { hashkeyTestnet } from '../lib/wagmi'
+import { useEthersSigner } from '../lib/useEthersSigner'
+import { getContracts } from '../lib/contracts'
 import PriceTicker from '../components/trade/PriceTicker'
 import SpotTrading from '../components/trade/SpotTrading'
 import PerpTrading from '../components/trade/PerpTrading'
@@ -51,56 +55,62 @@ const TAB_CONFIG: {
 
 export default function TradePage() {
   const [activeTab, setActiveTab] = useState<Tab>('spot')
-  const [walletAddress, setWalletAddress] = useState<string | null>(null)
-  const [signer, setSigner] = useState<ethers.Signer | null>(null)
   const [contracts, setContracts] = useState<ReturnType<typeof getContracts> | null>(null)
   const [usdcBalance, setUsdcBalance] = useState<bigint>(BigInt(0))
-  const [connectLoading, setConnectLoading] = useState(false)
-  const [connectError, setConnectError] = useState('')
   const [faucetLoading, setFaucetLoading] = useState(false)
   const [faucetError, setFaucetError] = useState('')
   const [faucetSuccess, setFaucetSuccess] = useState('')
 
+  // Wagmi hooks
+  const { address, isConnected, chain } = useAccount()
+  const { connect, isPending: connectLoading, error: connectErr } = useConnect()
+  const { switchChain } = useSwitchChain()
+  const signer = useEthersSigner()
+
+  // Wrong chain detection
+  const wrongChain = isConnected && chain?.id !== hashkeyTestnet.id
+
+  // Init contracts when signer is available
+  useEffect(() => {
+    if (signer) {
+      const ctrs = getContracts(signer)
+      setContracts(ctrs)
+    } else {
+      setContracts(null)
+    }
+  }, [signer])
+
   const fetchUsdcBalance = useCallback(async (
     ctrs: ReturnType<typeof getContracts>,
-    address: string
+    addr: string
   ) => {
     try {
-      const bal: bigint = await ctrs.usdc.balanceOf(address)
+      const bal: bigint = await ctrs.usdc.balanceOf(addr)
       setUsdcBalance(bal)
     } catch {
       // silently fail
     }
   }, [])
 
+  // Fetch balance when contracts/address change
+  useEffect(() => {
+    if (contracts && address) {
+      fetchUsdcBalance(contracts, address)
+    }
+  }, [contracts, address, fetchUsdcBalance])
+
   const refreshBalance = useCallback(() => {
-    if (contracts && walletAddress) {
-      fetchUsdcBalance(contracts, walletAddress)
+    if (contracts && address) {
+      fetchUsdcBalance(contracts, address)
     }
-  }, [contracts, walletAddress, fetchUsdcBalance])
+  }, [contracts, address, fetchUsdcBalance])
 
-  async function handleConnect() {
-    setConnectLoading(true)
-    setConnectError('')
-    try {
-      const provider = await connectWallet()
-      const s = await provider.getSigner()
-      const address = await s.getAddress()
-      const ctrs = getContracts(s)
+  function handleConnect() {
+    connect({ connector: injected() })
+  }
 
-      setSigner(s)
-      setContracts(ctrs)
-      setWalletAddress(address)
-      await fetchUsdcBalance(ctrs, address)
-    } catch (err: any) {
-      if (err?.code === 4001) {
-        setConnectError('Connection rejected.')
-      } else {
-        setConnectError(err?.message || 'Failed to connect wallet.')
-      }
-    } finally {
-      setConnectLoading(false)
-    }
+  function handleSwitchChain() {
+    switchChain({ chainId: hashkeyTestnet.id })
   }
 
   async function handleFaucet() {
@@ -125,19 +135,6 @@ export default function TradePage() {
       setFaucetLoading(false)
     }
   }
-
-  // Listen for account changes
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.ethereum) return
-    const handleAccountsChanged = () => {
-      setWalletAddress(null)
-      setSigner(null)
-      setContracts(null)
-      setUsdcBalance(BigInt(0))
-    }
-    window.ethereum.on('accountsChanged', handleAccountsChanged)
-    return () => window.ethereum?.removeListener('accountsChanged', handleAccountsChanged)
-  }, [])
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)', position: 'relative', overflow: 'hidden' }}>
@@ -216,7 +213,20 @@ export default function TradePage() {
 
           {/* Wallet + Back */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            {walletAddress ? (
+            {wrongChain ? (
+              <button
+                onClick={handleSwitchChain}
+                className="pixel-btn"
+                style={{
+                  background: '#3a1a00',
+                  border: '2px solid var(--red)',
+                  color: 'var(--red)',
+                  fontSize: '8px',
+                }}
+              >
+                WRONG CHAIN - SWITCH
+              </button>
+            ) : isConnected && address ? (
               /* Player name tag */
               <div
                 className="flex items-center gap-2 px-3 py-1"
@@ -234,7 +244,7 @@ export default function TradePage() {
                   style={{ imageRendering: 'pixelated' }}
                 />
                 <span className="pixel-font text-[8px]" style={{ color: 'var(--gold)' }}>
-                  {truncateAddress(walletAddress)}
+                  {truncateAddress(address)}
                 </span>
               </div>
             ) : (
@@ -250,7 +260,7 @@ export default function TradePage() {
                   opacity: connectLoading ? 0.7 : 1,
                 }}
               >
-                {connectLoading ? 'CONNECTING...' : '⚔ CONNECT'}
+                {connectLoading ? 'CONNECTING...' : 'CONNECT'}
               </button>
             )}
 
@@ -273,9 +283,11 @@ export default function TradePage() {
           </div>
         </div>
 
-        {connectError && (
+        {connectErr && (
           <div className="px-4 py-1" style={{ background: 'var(--red)', color: 'var(--white)' }}>
-            <span style={{ fontFamily: 'VT323, monospace', fontSize: '16px' }}>{connectError}</span>
+            <span style={{ fontFamily: 'VT323, monospace', fontSize: '16px' }}>
+              {connectErr.message?.includes('rejected') ? 'Connection rejected.' : 'Failed to connect wallet.'}
+            </span>
           </div>
         )}
       </header>
@@ -334,9 +346,9 @@ export default function TradePage() {
                 className="pixel-btn pixel-btn-primary"
                 style={{ opacity: faucetLoading || !contracts ? 0.6 : 1 }}
               >
-                {faucetLoading ? 'CLAIMING...' : '💧 CLAIM 1000 USDC'}
+                {faucetLoading ? 'CLAIMING...' : 'CLAIM 1000 USDC'}
               </button>
-              {!walletAddress && (
+              {!isConnected && (
                 <span style={{ color: 'var(--muted)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>
                   Connect wallet first
                 </span>
