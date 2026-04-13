@@ -12,7 +12,7 @@ export const hashkeyTestnet = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ['https://hashkeychain-testnet.alt.technology'],
+      http: ['https://testnet.hsk.xyz'],
     },
   },
   blockExplorers: {

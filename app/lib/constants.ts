@@ -45,7 +45,7 @@ export const HASHKEY_TESTNET = {
   chainId:     133,
   chainIdHex:  '0x85',
   name:        "HashKey Chain Testnet",
-  rpcUrl:      "https://hashkeychain-testnet.alt.technology",
+  rpcUrl:      "https://testnet.hsk.xyz",
   explorerUrl: "https://testnet-explorer.hsk.xyz",
   nativeCurrency: { name: "HSK", symbol: "HSK", decimals: 18 }
 }
