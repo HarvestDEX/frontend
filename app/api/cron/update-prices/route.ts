@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { ethers } from 'ethers'
 import { getCommodityPrices, toOnChainPrice } from '@/app/lib/prices'
 import PriceOracleABI from '@/app/lib/abi/PriceOracle.json'
+import { insertPrices, initDb } from '@/app/lib/db'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30 // seconds
@@ -46,6 +47,21 @@ export async function GET(request: Request) {
 
     const tx = await oracle.updatePrices(symbols, values)
     await tx.wait()
+
+    // Store prices in Neon DB for charting (non-blocking, don't fail cron if DB is down)
+    if (process.env.DATABASE_URL) {
+      try {
+        await initDb()
+        const dbPrices: Record<string, number> = {}
+        for (const symbol of SYMBOLS) {
+          const price = prices[symbol as keyof typeof prices]
+          if (typeof price === 'number') dbPrices[symbol] = price
+        }
+        await insertPrices(dbPrices)
+      } catch (dbErr) {
+        console.error('DB insert failed (non-fatal):', dbErr)
+      }
+    }
 
     return NextResponse.json({
       success: true,

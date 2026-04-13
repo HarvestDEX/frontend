@@ -9,6 +9,7 @@ import { hashkeyTestnet } from '../lib/wagmi'
 import { useEthersSigner } from '../lib/useEthersSigner'
 import { getContracts } from '../lib/contracts'
 import PriceTicker from '../components/trade/PriceTicker'
+import PriceChart from '../components/trade/PriceChart'
 import SpotTrading from '../components/trade/SpotTrading'
 import PerpTrading from '../components/trade/PerpTrading'
 import LPPool from '../components/trade/LPPool'
@@ -362,6 +363,9 @@ export default function TradePage() {
             )}
           </div>
         </div>
+
+        {/* ── PRICE CHART ────────────────────────────────────────── */}
+        <PriceChart />
 
         {/* ── RPG TAB BAR ───────────────────────────────────────── */}
         <div className="flex gap-2 flex-wrap">
