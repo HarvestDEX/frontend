@@ -9,13 +9,21 @@ import PriceOracleABI from './abi/PriceOracle.json'
 /**
  * Create contract instances from an ethers Signer.
  * The signer comes from wagmi via the useEthersSigner() hook.
+ * Uses ethers.getAddress() to ensure checksummed addresses (avoids ENS resolution).
  */
 export function getContracts(signer: ethers.Signer) {
+  const addr = CONTRACT_ADDRESSES
+
+  // Validate addresses exist before creating contracts
+  if (!addr.mockUSDC || !addr.spotMarket || !addr.positionManager) {
+    throw new Error('Contract addresses not configured')
+  }
+
   return {
-    usdc: new ethers.Contract(CONTRACT_ADDRESSES.mockUSDC, MockUSDCABI, signer),
-    oracle: new ethers.Contract(CONTRACT_ADDRESSES.priceOracle, PriceOracleABI, signer),
-    spot: new ethers.Contract(CONTRACT_ADDRESSES.spotMarket, SpotMarketABI, signer),
-    lp: new ethers.Contract(CONTRACT_ADDRESSES.liquidityPool, LiquidityPoolABI, signer),
-    pm: new ethers.Contract(CONTRACT_ADDRESSES.positionManager, PositionManagerABI, signer),
+    usdc: new ethers.Contract(ethers.getAddress(addr.mockUSDC), MockUSDCABI, signer),
+    oracle: new ethers.Contract(ethers.getAddress(addr.priceOracle), PriceOracleABI, signer),
+    spot: new ethers.Contract(ethers.getAddress(addr.spotMarket), SpotMarketABI, signer),
+    lp: new ethers.Contract(ethers.getAddress(addr.liquidityPool), LiquidityPoolABI, signer),
+    pm: new ethers.Contract(ethers.getAddress(addr.positionManager), PositionManagerABI, signer),
   }
 }

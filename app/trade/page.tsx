@@ -56,6 +56,7 @@ export default function TradePage() {
   // Wagmi hooks
   const { address, isConnected, chain } = useAccount()
   const { connect, isPending: connectLoading, error: connectErr } = useConnect()
+  const { disconnect } = useDisconnect()
   const { switchChain } = useSwitchChain()
   const signer = useEthersSigner()
 
@@ -65,8 +66,13 @@ export default function TradePage() {
   // Init contracts when signer is available
   useEffect(() => {
     if (signer) {
-      const ctrs = getContracts(signer)
-      setContracts(ctrs)
+      try {
+        const ctrs = getContracts(signer)
+        setContracts(ctrs)
+      } catch (err) {
+        console.warn('Failed to init contracts:', err)
+        setContracts(null)
+      }
     } else {
       setContracts(null)
     }
@@ -204,25 +210,42 @@ export default function TradePage() {
                 WRONG CHAIN - SWITCH
               </button>
             ) : isConnected && address ? (
-              /* Player name tag */
-              <div
-                className="flex items-center gap-2 px-3 py-1"
-                style={{
-                  background: 'var(--card)',
-                  border: '2px solid var(--gold)',
-                  boxShadow: 'inset -2px -2px 0 0 #7a5a20, inset 2px 2px 0 0 #f0e080',
-                }}
-              >
-                <img
-                  src="/sprites/farmer-east.png"
-                  alt=""
-                  width={20}
-                  height={20}
-                  style={{ imageRendering: 'pixelated' }}
-                />
-                <span className="pixel-font text-[8px]" style={{ color: 'var(--gold)' }}>
-                  {truncateAddress(address)}
-                </span>
+              <div className="flex items-center gap-2">
+                {/* Player name tag */}
+                <div
+                  className="flex items-center gap-2 px-3 py-1"
+                  style={{
+                    background: 'var(--card)',
+                    border: '2px solid var(--gold)',
+                    boxShadow: 'inset -2px -2px 0 0 #7a5a20, inset 2px 2px 0 0 #f0e080',
+                  }}
+                >
+                  <img
+                    src="/sprites/farmer-east.png"
+                    alt=""
+                    width={20}
+                    height={20}
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                  <span className="pixel-font text-[8px]" style={{ color: 'var(--gold)' }}>
+                    {truncateAddress(address)}
+                  </span>
+                </div>
+                {/* Disconnect button */}
+                <button
+                  onClick={() => disconnect()}
+                  className="pixel-btn"
+                  style={{
+                    background: 'var(--surface)',
+                    border: '2px solid var(--red)',
+                    color: 'var(--red)',
+                    fontSize: '7px',
+                    padding: '4px 8px',
+                  }}
+                  title="Disconnect wallet"
+                >
+                  ✕
+                </button>
               </div>
             ) : (
               <button
