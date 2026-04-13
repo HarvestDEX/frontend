@@ -206,11 +206,11 @@ export default function Hero() {
           }}
         >
           <img
-            src="/sprites/farmer-south.png"
-            alt="Farmer"
-            width={88}
-            height={88}
-            style={{ imageRendering: 'pixelated' }}
+            src="/logo.png"
+            alt="HarvestDEX"
+            width={96}
+            height={96}
+            style={{ imageRendering: 'pixelated', borderRadius: '50%' }}
           />
         </div>
 

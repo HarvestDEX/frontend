@@ -82,14 +82,14 @@ export default function Footer() {
             flexWrap: 'wrap',
           }}
         >
-          {/* Logo with farmer sprite */}
+          {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <img
-              src="/sprites/farmer-south.png"
-              alt="farmer"
-              width={34}
-              height={34}
-              style={{ imageRendering: 'pixelated' }}
+              src="/logo.png"
+              alt="HarvestDEX"
+              width={36}
+              height={36}
+              style={{ imageRendering: 'pixelated', borderRadius: '50%' }}
             />
             <span
               className="pixel-font"

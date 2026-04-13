@@ -35,11 +35,11 @@ export default function Navbar() {
         {/* Logo */}
         <div className="flex items-center gap-2">
           <img
-            src="/sprites/farmer-south.png"
-            alt="farmer"
-            width={28}
-            height={28}
-            style={{ imageRendering: 'pixelated' }}
+            src="/logo.png"
+            alt="HarvestDEX"
+            width={32}
+            height={32}
+            style={{ imageRendering: 'pixelated', borderRadius: '50%' }}
           />
           <span
             className="pixel-font"

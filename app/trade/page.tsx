@@ -167,11 +167,11 @@ export default function TradePage() {
           {/* Logo + farmer avatar */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <img
-              src="/sprites/farmer-south.png"
-              alt="farmer"
-              width={34}
-              height={34}
-              style={{ imageRendering: 'pixelated' }}
+              src="/logo.png"
+              alt="HarvestDEX"
+              width={36}
+              height={36}
+              style={{ imageRendering: 'pixelated', borderRadius: '50%' }}
             />
             <div>
               <div className="pixel-font text-[11px]" style={{ color: 'var(--accent)', lineHeight: 1.4 }}>
