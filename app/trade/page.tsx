@@ -8,6 +8,7 @@ import { hashkeyTestnet } from '../lib/wagmi'
 import { USDC_CONTRACT } from '../lib/contracts'
 import PriceTicker from '../components/trade/PriceTicker'
 import PriceChart from '../components/trade/PriceChart'
+import Portfolio from '../components/trade/Portfolio'
 import SpotTrading from '../components/trade/SpotTrading'
 import PerpTrading from '../components/trade/PerpTrading'
 
@@ -338,6 +339,9 @@ export default function TradePage() {
             )}
           </div>
         </div>
+
+        {/* ── MY CROPS / PORTFOLIO ──────────────────────────────── */}
+        <Portfolio />
 
         {/* ── PRICE CHART ────────────────────────────────────────── */}
         <PriceChart />
