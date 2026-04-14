@@ -73,11 +73,6 @@ export default function TradePage() {
     hash: faucetTxHash,
   })
 
-  // On mount: ensure MetaMask has correct RPC
-  useEffect(() => {
-    if (isConnected) ensureChainRpc()
-  }, [isConnected])
-
   // Refresh balance after faucet tx confirms
   useEffect(() => {
     if (faucetTxSuccess) {
@@ -86,30 +81,11 @@ export default function TradePage() {
     }
   }, [faucetTxSuccess, refetchBalance])
 
-  // Force MetaMask to use our RPC by re-adding the chain
-  async function ensureChainRpc() {
-    if (typeof window === 'undefined' || !(window as any).ethereum) return
-    try {
-      await (window as any).ethereum.request({
-        method: 'wallet_addEthereumChain',
-        params: [{
-          chainId: '0x85',
-          chainName: 'HashKey Chain Testnet',
-          nativeCurrency: { name: 'HSK', symbol: 'HSK', decimals: 18 },
-          rpcUrls: ['https://testnet.hsk.xyz'],
-          blockExplorerUrls: ['https://testnet-explorer.hsk.xyz'],
-        }],
-      })
-    } catch {}
-  }
-
   function handleConnect() {
-    ensureChainRpc()
     connect({ connector: injected() })
   }
 
   function handleSwitchChain() {
-    ensureChainRpc()
     switchChain({ chainId: hashkeyTestnet.id })
   }
 

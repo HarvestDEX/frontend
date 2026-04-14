@@ -1,4 +1,4 @@
-import { http, createConfig } from 'wagmi'
+import { http, createConfig, fallback } from 'wagmi'
 import { injected } from 'wagmi/connectors'
 import { defineChain } from 'viem'
 
@@ -30,7 +30,10 @@ export const config = createConfig({
     injected(),
   ],
   transports: {
-    [hashkeyTestnet.id]: http('https://testnet.hsk.xyz'),
+    [hashkeyTestnet.id]: fallback([
+      http('https://testnet.hsk.xyz'),
+      http('https://hashkeychain-testnet.alt.technology'),
+    ]),
   },
   ssr: true,
 })
