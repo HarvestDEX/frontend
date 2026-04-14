@@ -88,9 +88,9 @@ export default function TradePage() {
 
   // Force MetaMask to use our RPC by re-adding the chain
   async function ensureChainRpc() {
-    if (typeof window === 'undefined' || !window.ethereum) return
+    if (typeof window === 'undefined' || !(window as any).ethereum) return
     try {
-      await window.ethereum.request({
+      await (window as any).ethereum.request({
         method: 'wallet_addEthereumChain',
         params: [{
           chainId: '0x85',
