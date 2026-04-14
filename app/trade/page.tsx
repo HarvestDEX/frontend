@@ -6,9 +6,7 @@ import { useAccount, useConnect, useDisconnect, useSwitchChain, useReadContract,
 import { injected } from 'wagmi/connectors'
 import { hashkeyTestnet } from '../lib/wagmi'
 import { USDC_CONTRACT } from '../lib/contracts'
-import PriceTicker from '../components/trade/PriceTicker'
 import PriceChart from '../components/trade/PriceChart'
-import Portfolio from '../components/trade/Portfolio'
 import SpotTrading from '../components/trade/SpotTrading'
 import PerpTrading from '../components/trade/PerpTrading'
 
@@ -18,47 +16,18 @@ function truncateAddress(addr: string): string {
   return addr.slice(0, 6) + '...' + addr.slice(-4)
 }
 
-const TAB_CONFIG: {
-  key: Tab
-  label: string
-  sprite: string
-  spriteW: number
-  spriteH: number
-  description: string
-}[] = [
-  {
-    key: 'spot',
-    label: 'MARKET',
-    sprite: '/sprites/market-stall.png',
-    spriteW: 40,
-    spriteH: 40,
-    description: 'Buy & sell crops',
-  },
-  {
-    key: 'perp',
-    label: 'BARN',
-    sprite: '/sprites/barn.png',
-    spriteW: 40,
-    spriteH: 40,
-    description: 'Long / Short quests',
-  },
-]
-
 export default function TradePage() {
   const [activeTab, setActiveTab] = useState<Tab>('spot')
   const [faucetError, setFaucetError] = useState('')
   const [faucetSuccess, setFaucetSuccess] = useState('')
 
-  // Wagmi hooks
   const { address, isConnected, chain } = useAccount()
   const { connect, isPending: connectLoading, error: connectErr } = useConnect()
   const { disconnect } = useDisconnect()
   const { switchChain } = useSwitchChain()
 
-  // Wrong chain detection
   const wrongChain = isConnected && chain?.id !== hashkeyTestnet.id
 
-  // Read USDC balance
   const { data: usdcBalance, refetch: refetchBalance } = useReadContract({
     ...USDC_CONTRACT,
     functionName: 'balanceOf',
@@ -66,18 +35,13 @@ export default function TradePage() {
     query: { enabled: !!address && isConnected && !wrongChain },
   })
 
-  // Write: faucet claim
   const { writeContractAsync: writeFaucet, isPending: faucetLoading, data: faucetTxHash } = useWriteContract()
 
-  // Wait for faucet tx
-  const { isSuccess: faucetTxSuccess } = useWaitForTransactionReceipt({
-    hash: faucetTxHash,
-  })
+  const { isSuccess: faucetTxSuccess } = useWaitForTransactionReceipt({ hash: faucetTxHash })
 
-  // Refresh balance after faucet tx confirms
   useEffect(() => {
     if (faucetTxSuccess) {
-      setFaucetSuccess('You claimed 1000 USDC!')
+      setFaucetSuccess('Claimed 1000 USDC!')
       refetchBalance()
     }
   }, [faucetTxSuccess, refetchBalance])
@@ -94,17 +58,14 @@ export default function TradePage() {
     setFaucetError('')
     setFaucetSuccess('')
     try {
-      await writeFaucet({
-        ...USDC_CONTRACT,
-        functionName: 'faucet',
-      })
+      await writeFaucet({ ...USDC_CONTRACT, functionName: 'faucet' })
     } catch (err: any) {
       if (err?.message?.includes('User rejected') || err?.message?.includes('denied')) {
         setFaucetError('Transaction rejected.')
       } else if (err?.message?.includes('cooldown')) {
-        setFaucetError('The well is dry. Come back tomorrow!')
+        setFaucetError('Come back tomorrow!')
       } else {
-        setFaucetError(err?.shortMessage || err?.message || 'Faucet claim failed.')
+        setFaucetError(err?.shortMessage || err?.message || 'Failed.')
       }
     }
   }
@@ -112,299 +73,249 @@ export default function TradePage() {
   const balance = usdcBalance ? (Number(usdcBalance as bigint) / 1e6).toFixed(2) : '0.00'
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg)', position: 'relative', overflow: 'hidden' }}>
+    <div style={{
+      background: 'var(--bg)',
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+    }}>
+      {/* Background grid */}
+      <div className="fixed inset-0 pointer-events-none" style={{
+        backgroundImage: 'linear-gradient(rgba(74,124,89,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(74,124,89,0.03) 1px, transparent 1px)',
+        backgroundSize: '32px 32px', zIndex: 0,
+      }} />
 
-      {/* Background pixel grid */}
-      <div
-        className="fixed inset-0 pointer-events-none"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(74,124,89,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(74,124,89,0.03) 1px, transparent 1px)',
-          backgroundSize: '32px 32px',
-          zIndex: 0,
-        }}
-      />
+      {/* ── TOP BAR ──────────────────────────────────────── */}
+      <header style={{
+        background: 'var(--surface)',
+        borderBottom: '2px solid var(--border)',
+        padding: '6px 12px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '8px',
+        flexShrink: 0,
+        position: 'relative',
+        zIndex: 10,
+        flexWrap: 'wrap',
+      }}>
+        {/* Logo */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <img src="/logo.png" alt="HarvestDEX" width={28} height={28}
+            style={{ imageRendering: 'pixelated', borderRadius: '50%' }} />
+          <span className="pixel-font text-[9px]" style={{ color: 'var(--accent)' }}>HarvestDEX</span>
+        </div>
 
-      {/* Subtle dark ground gradient */}
-      <div
-        className="fixed bottom-0 left-0 right-0 pointer-events-none"
-        style={{
-          height: '48px',
-          background: 'linear-gradient(180deg, transparent, rgba(0,0,0,0.3))',
-          zIndex: 0,
-        }}
-      />
+        {/* Balance + Faucet */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {isConnected && (
+            <>
+              <img src="/sprites/usdc-coin.png" alt="usdc" width={16} height={16} style={{ imageRendering: 'pixelated' }} />
+              <span style={{ color: 'var(--gold)', fontFamily: 'VT323, monospace', fontSize: '18px' }}>
+                {balance} USDC
+              </span>
+              <button
+                onClick={handleFaucet}
+                disabled={faucetLoading || wrongChain}
+                style={{
+                  padding: '2px 8px', fontSize: '8px', cursor: 'pointer',
+                  fontFamily: 'Press Start 2P, monospace',
+                  background: 'var(--accent)', border: '1px solid var(--accent)',
+                  color: 'var(--bg)',
+                  opacity: faucetLoading ? 0.6 : 1,
+                }}>
+                {faucetLoading ? '...' : '+1000'}
+              </button>
+              {faucetSuccess && <span style={{ color: 'var(--accent)', fontFamily: 'VT323', fontSize: '14px' }}>{faucetSuccess}</span>}
+              {faucetError && <span style={{ color: 'var(--red)', fontFamily: 'VT323', fontSize: '14px' }}>{faucetError}</span>}
+            </>
+          )}
+        </div>
 
-      {/* ── HEADER ─────────────────────────────────────────────────── */}
-      <header
-        style={{
-          background: 'var(--surface)',
-          borderBottom: '3px solid var(--border)',
-          boxShadow: '0 2px 0 0 #2a4c2a',
-          position: 'relative',
-          zIndex: 10,
-        }}
-      >
-        {/* Top row: logo + wallet + back */}
-        <div className="flex items-center justify-between px-4 py-2 gap-3 flex-wrap">
-          {/* Logo */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <img
-              src="/logo.png"
-              alt="HarvestDEX"
-              width={36}
-              height={36}
-              style={{ imageRendering: 'pixelated', borderRadius: '50%' }}
-            />
-            <div>
-              <div className="pixel-font text-[11px]" style={{ color: 'var(--accent)', lineHeight: 1.4 }}>
-                HarvestDEX
+        {/* Wallet + Nav */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {wrongChain ? (
+            <button onClick={handleSwitchChain} style={{
+              padding: '3px 8px', fontSize: '8px', cursor: 'pointer',
+              fontFamily: 'Press Start 2P, monospace',
+              background: '#3a1a00', border: '2px solid var(--red)', color: 'var(--red)',
+            }}>SWITCH CHAIN</button>
+          ) : isConnected && address ? (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 px-2 py-1"
+                style={{ background: 'var(--card)', border: '1px solid var(--gold)' }}>
+                <img src="/sprites/farmer-east.png" alt="" width={16} height={16} style={{ imageRendering: 'pixelated' }} />
+                <span className="pixel-font text-[7px]" style={{ color: 'var(--gold)' }}>
+                  {truncateAddress(address)}
+                </span>
               </div>
-              <div style={{ color: 'var(--muted)', fontFamily: 'VT323, monospace', fontSize: '14px', lineHeight: 1 }}>
-                Market
-              </div>
+              <button onClick={() => disconnect()} title="Disconnect"
+                style={{
+                  padding: '2px 6px', cursor: 'pointer',
+                  background: 'var(--surface)', border: '1px solid var(--red)',
+                  color: 'var(--red)', fontSize: '10px', fontFamily: 'VT323',
+                }}>
+                X
+              </button>
             </div>
-          </div>
-
-          {/* Price ticker */}
-          <div className="flex-1 min-w-0 overflow-hidden">
-            <PriceTicker />
-          </div>
-
-          {/* Wallet + Back */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {wrongChain ? (
-              <button
-                onClick={handleSwitchChain}
-                className="pixel-btn"
-                style={{
-                  background: '#3a1a00',
-                  border: '2px solid var(--red)',
-                  color: 'var(--red)',
-                  fontSize: '8px',
-                }}
-              >
-                WRONG CHAIN - SWITCH
-              </button>
-            ) : isConnected && address ? (
-              <div className="flex items-center gap-2">
-                {/* Player name tag */}
-                <div
-                  className="flex items-center gap-2 px-3 py-1"
-                  style={{
-                    background: 'var(--card)',
-                    border: '2px solid var(--gold)',
-                    boxShadow: 'inset -2px -2px 0 0 #7a5a20, inset 2px 2px 0 0 #f0e080',
-                  }}
-                >
-                  <img
-                    src="/sprites/farmer-east.png"
-                    alt=""
-                    width={20}
-                    height={20}
-                    style={{ imageRendering: 'pixelated' }}
-                  />
-                  <span className="pixel-font text-[8px]" style={{ color: 'var(--gold)' }}>
-                    {truncateAddress(address)}
-                  </span>
-                </div>
-                {/* Disconnect button */}
-                <button
-                  onClick={() => disconnect()}
-                  className="pixel-btn"
-                  style={{
-                    background: 'var(--surface)',
-                    border: '2px solid var(--red)',
-                    color: 'var(--red)',
-                    fontSize: '7px',
-                    padding: '4px 8px',
-                  }}
-                  title="Disconnect wallet"
-                >
-                  ✕
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={handleConnect}
-                disabled={connectLoading}
-                className="pixel-btn"
-                style={{
-                  background: connectLoading ? 'var(--surface)' : '#1a1200',
-                  border: '2px solid var(--gold)',
-                  color: 'var(--gold)',
-                  boxShadow: 'inset -2px -2px 0 0 #7a5a20, inset 2px 2px 0 0 #f0e080',
-                  opacity: connectLoading ? 0.7 : 1,
-                }}
-              >
-                {connectLoading ? 'CONNECTING...' : 'CONNECT'}
-              </button>
-            )}
-
-            {/* Back to Village */}
-            <Link
-              href="/"
-              className="flex items-center gap-1 px-2 py-1"
+          ) : (
+            <button onClick={handleConnect} disabled={connectLoading}
               style={{
-                background: 'var(--surface)',
-                border: '2px solid var(--border)',
-                color: 'var(--muted)',
-                textDecoration: 'none',
+                padding: '4px 10px', fontSize: '8px', cursor: 'pointer',
                 fontFamily: 'Press Start 2P, monospace',
-                fontSize: '8px',
-              }}
-            >
-              <img src="/sprites/signpost.png" alt="" width={14} height={18} style={{ imageRendering: 'pixelated' }} />
-              VILLAGE
-            </Link>
-          </div>
+                background: '#1a1200', border: '2px solid var(--gold)', color: 'var(--gold)',
+                opacity: connectLoading ? 0.6 : 1,
+              }}>
+              {connectLoading ? '...' : 'CONNECT'}
+            </button>
+          )}
+
+          <Link href="/" style={{
+            padding: '3px 8px', textDecoration: 'none',
+            fontFamily: 'Press Start 2P, monospace', fontSize: '7px',
+            background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--muted)',
+            display: 'flex', alignItems: 'center', gap: '4px',
+          }}>
+            <img src="/sprites/signpost.png" alt="" width={12} height={14} style={{ imageRendering: 'pixelated' }} />
+            HOME
+          </Link>
         </div>
 
         {connectErr && (
-          <div className="px-4 py-1" style={{ background: 'var(--red)', color: 'var(--white)' }}>
-            <span style={{ fontFamily: 'VT323, monospace', fontSize: '16px' }}>
-              {connectErr.message?.includes('rejected') ? 'Connection rejected.' : 'Failed to connect wallet.'}
-            </span>
+          <div style={{
+            width: '100%', padding: '2px 8px',
+            background: 'var(--red)', color: 'var(--white)',
+            fontFamily: 'VT323, monospace', fontSize: '14px',
+          }}>
+            {connectErr.message?.includes('rejected') ? 'Connection rejected.' : 'Failed to connect.'}
           </div>
         )}
       </header>
 
-      {/* ── MAIN ───────────────────────────────────────────────────── */}
-      <main className="max-w-5xl mx-auto px-4 py-5 flex flex-col gap-5" style={{ position: 'relative', zIndex: 1 }}>
+      {/* ── MAIN CONTENT ─── fills remaining viewport ──── */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        gap: '8px',
+        padding: '8px',
+        overflow: 'hidden',
+        position: 'relative',
+        zIndex: 1,
+        minHeight: 0,
+      }}>
 
-        {/* ── VILLAGE WELL / FAUCET ─────────────────────────────── */}
-        <div
-          className="flex flex-wrap items-center justify-between gap-4 p-4"
-          style={{
-            background: 'var(--card)',
-            border: '2px solid var(--border)',
-            boxShadow: '0 -2px 0 0 var(--border), 0 2px 0 0 var(--border), -2px 0 0 0 var(--border), 2px 0 0 0 var(--border)',
-          }}
-        >
-          {/* Left: Well + title + balance */}
-          <div className="flex items-center gap-3">
-            <img
-              src="/sprites/well.png"
-              alt="village well"
-              width={48}
-              height={56}
-              style={{ imageRendering: 'pixelated', flexShrink: 0 }}
-            />
-            <div>
-              <p className="pixel-font text-[9px]" style={{ color: 'var(--gold)' }}>USDC FAUCET</p>
-              <p style={{ color: 'var(--muted)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>
-                Claim 1000 USDC per day
-              </p>
-              {/* USDC balance */}
-              <div className="flex items-center gap-1 mt-1">
-                <img
-                  src="/sprites/usdc-coin.png"
-                  alt="usdc"
-                  width={18}
-                  height={18}
-                  style={{ imageRendering: 'pixelated' }}
-                />
-                <span style={{ color: 'var(--gold)', fontFamily: 'VT323, monospace', fontSize: '22px' }}>
-                  {balance}
-                </span>
-                <span className="pixel-font text-[7px]" style={{ color: 'var(--gold)', marginLeft: '2px' }}>
-                  USDC
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Right: Faucet button + messages */}
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleFaucet}
-                disabled={faucetLoading || !isConnected || wrongChain}
-                className="pixel-btn pixel-btn-primary"
-                style={{ opacity: faucetLoading || !isConnected || wrongChain ? 0.6 : 1 }}
-              >
-                {faucetLoading ? 'CLAIMING...' : 'CLAIM 1000 USDC'}
-              </button>
-              {!isConnected && (
-                <span style={{ color: 'var(--muted)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>
-                  Connect wallet first
-                </span>
-              )}
-            </div>
-            {faucetError && (
-              <p style={{ color: 'var(--red)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>{faucetError}</p>
-            )}
-            {faucetSuccess && (
-              <p style={{ color: 'var(--accent)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>{faucetSuccess}</p>
-            )}
+        {/* ── LEFT COLUMN: Chart ────────────────────────── */}
+        <div style={{
+          flex: '1 1 55%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0',
+          minWidth: 0,
+          overflow: 'hidden',
+        }}>
+          <div className="pixel-card" style={{
+            padding: '10px',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            minHeight: 0,
+          }}>
+            <PriceChart />
           </div>
         </div>
 
-        {/* ── MY CROPS / PORTFOLIO ──────────────────────────────── */}
-        <Portfolio />
+        {/* ── RIGHT COLUMN: Trading ─────────────────────── */}
+        <div style={{
+          flex: '1 1 45%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0',
+          minWidth: 0,
+          overflow: 'hidden',
+        }}>
+          {/* Tab bar */}
+          <div style={{
+            display: 'flex',
+            gap: '4px',
+            marginBottom: '6px',
+            flexShrink: 0,
+          }}>
+            <button
+              onClick={() => setActiveTab('spot')}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                padding: '6px 8px',
+                cursor: 'pointer',
+                fontFamily: 'Press Start 2P, monospace',
+                fontSize: '8px',
+                background: activeTab === 'spot' ? 'var(--card)' : 'var(--surface)',
+                border: activeTab === 'spot' ? '2px solid var(--gold)' : '2px solid var(--border)',
+                color: activeTab === 'spot' ? 'var(--gold)' : 'var(--muted)',
+                boxShadow: activeTab === 'spot' ? '0 0 6px rgba(240,192,96,0.2)' : 'none',
+              }}>
+              <img src="/sprites/market-stall.png" alt="" width={24} height={24} style={{ imageRendering: 'pixelated' }} />
+              MARKET
+            </button>
+            <button
+              onClick={() => setActiveTab('perp')}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                padding: '6px 8px',
+                cursor: 'pointer',
+                fontFamily: 'Press Start 2P, monospace',
+                fontSize: '8px',
+                background: activeTab === 'perp' ? 'var(--card)' : 'var(--surface)',
+                border: activeTab === 'perp' ? '2px solid var(--gold)' : '2px solid var(--border)',
+                color: activeTab === 'perp' ? 'var(--gold)' : 'var(--muted)',
+                boxShadow: activeTab === 'perp' ? '0 0 6px rgba(240,192,96,0.2)' : 'none',
+              }}>
+              <img src="/sprites/barn.png" alt="" width={24} height={24} style={{ imageRendering: 'pixelated' }} />
+              LONG/SHORT
+            </button>
+          </div>
 
-        {/* ── PRICE CHART ────────────────────────────────────────── */}
-        <PriceChart />
-
-        {/* ── RPG TAB BAR ───────────────────────────────────────── */}
-        <div className="flex gap-2 flex-wrap">
-          {TAB_CONFIG.map((tab) => {
-            const isActive = activeTab === tab.key
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className="flex items-center gap-2 px-3 py-2"
-                style={{
-                  background: isActive ? 'var(--card)' : 'var(--surface)',
-                  border: isActive ? '2px solid var(--gold)' : '2px solid var(--border)',
-                  boxShadow: isActive
-                    ? 'inset -2px -2px 0 0 #7a5a20, inset 2px 2px 0 0 #f0e080, 0 0 8px 1px rgba(240,192,96,0.3)'
-                    : 'none',
-                  cursor: 'pointer',
-                  transition: 'none',
-                  outline: 'none',
-                }}
-              >
-                <img
-                  src={tab.sprite}
-                  alt={tab.label}
-                  width={tab.spriteW}
-                  height={tab.spriteH}
-                  style={{ imageRendering: 'pixelated' }}
-                />
-                <div className="text-left">
-                  <div
-                    className="pixel-font text-[9px]"
-                    style={{ color: isActive ? 'var(--gold)' : 'var(--muted)' }}
-                  >
-                    {tab.label}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: 'VT323, monospace',
-                      fontSize: '14px',
-                      color: isActive ? 'var(--white)' : 'var(--muted)',
-                    }}
-                  >
-                    {tab.description}
-                  </div>
-                </div>
-              </button>
-            )
-          })}
+          {/* Scrollable trading panel */}
+          <div style={{
+            flex: 1,
+            overflow: 'auto',
+            minHeight: 0,
+          }}>
+            {activeTab === 'spot' && (
+              <SpotTradingCompact onTxSuccess={() => refetchBalance()} />
+            )}
+            {activeTab === 'perp' && (
+              <PerpTradingCompact onTxSuccess={() => refetchBalance()} />
+            )}
+          </div>
         </div>
+      </div>
+    </div>
+  )
+}
 
-        {/* ── TAB CONTENT ───────────────────────────────────────── */}
-        <div>
-          {activeTab === 'spot' && (
-            <SpotTrading onTxSuccess={() => refetchBalance()} />
-          )}
-          {activeTab === 'perp' && (
-            <PerpTrading onTxSuccess={() => refetchBalance()} />
-          )}
-        </div>
-      </main>
+// ── Compact Spot Trading (inline, fits in panel) ──────────────
+function SpotTradingCompact({ onTxSuccess }: { onTxSuccess: () => void }) {
+  return (
+    <div style={{ height: '100%' }}>
+      <SpotTrading onTxSuccess={onTxSuccess} />
+    </div>
+  )
+}
+
+function PerpTradingCompact({ onTxSuccess }: { onTxSuccess: () => void }) {
+  return (
+    <div style={{ height: '100%' }}>
+      <PerpTrading onTxSuccess={onTxSuccess} />
     </div>
   )
 }
