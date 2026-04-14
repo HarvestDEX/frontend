@@ -30,7 +30,7 @@ export const config = createConfig({
     injected(),
   ],
   transports: {
-    [hashkeyTestnet.id]: http(),
+    [hashkeyTestnet.id]: http('https://testnet.hsk.xyz'),
   },
   ssr: true,
 })

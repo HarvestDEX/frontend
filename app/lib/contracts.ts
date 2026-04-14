@@ -1,4 +1,4 @@
-import { ethers } from 'ethers'
+import { type Abi } from 'viem'
 import { CONTRACT_ADDRESSES } from './constants'
 import MockUSDCABI from './abi/MockUSDC.json'
 import SpotMarketABI from './abi/SpotMarket.json'
@@ -6,24 +6,27 @@ import LiquidityPoolABI from './abi/LiquidityPool.json'
 import PositionManagerABI from './abi/PositionManager.json'
 import PriceOracleABI from './abi/PriceOracle.json'
 
-/**
- * Create contract instances from an ethers Signer.
- * The signer comes from wagmi via the useEthersSigner() hook.
- * Uses ethers.getAddress() to ensure checksummed addresses (avoids ENS resolution).
- */
-export function getContracts(signer: ethers.Signer) {
-  const addr = CONTRACT_ADDRESSES
+export const USDC_CONTRACT = {
+  address: CONTRACT_ADDRESSES.mockUSDC as `0x${string}`,
+  abi: MockUSDCABI as Abi,
+} as const
 
-  // Validate addresses exist before creating contracts
-  if (!addr.mockUSDC || !addr.spotMarket || !addr.positionManager) {
-    throw new Error('Contract addresses not configured')
-  }
+export const ORACLE_CONTRACT = {
+  address: CONTRACT_ADDRESSES.priceOracle as `0x${string}`,
+  abi: PriceOracleABI as Abi,
+} as const
 
-  return {
-    usdc: new ethers.Contract(ethers.getAddress(addr.mockUSDC), MockUSDCABI, signer),
-    oracle: new ethers.Contract(ethers.getAddress(addr.priceOracle), PriceOracleABI, signer),
-    spot: new ethers.Contract(ethers.getAddress(addr.spotMarket), SpotMarketABI, signer),
-    lp: new ethers.Contract(ethers.getAddress(addr.liquidityPool), LiquidityPoolABI, signer),
-    pm: new ethers.Contract(ethers.getAddress(addr.positionManager), PositionManagerABI, signer),
-  }
-}
+export const SPOT_CONTRACT = {
+  address: CONTRACT_ADDRESSES.spotMarket as `0x${string}`,
+  abi: SpotMarketABI as Abi,
+} as const
+
+export const LP_CONTRACT = {
+  address: CONTRACT_ADDRESSES.liquidityPool as `0x${string}`,
+  abi: LiquidityPoolABI as Abi,
+} as const
+
+export const PM_CONTRACT = {
+  address: CONTRACT_ADDRESSES.positionManager as `0x${string}`,
+  abi: PositionManagerABI as Abi,
+} as const

@@ -1,23 +1,30 @@
 import { NextResponse } from 'next/server'
-import { ethers } from 'ethers'
+import { createPublicClient, createWalletClient, http } from 'viem'
+import { privateKeyToAccount } from 'viem/accounts'
 import { getCommodityPrices, toOnChainPrice } from '@/app/lib/prices'
 import PriceOracleABI from '@/app/lib/abi/PriceOracle.json'
 import { insertPrices, initDb } from '@/app/lib/db'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 30 // seconds
+export const maxDuration = 30
 
 const SYMBOLS = ['RICE', 'COFFEE', 'CORN', 'CPO']
 
+const hashkeyTestnet = {
+  id: 133,
+  name: 'HashKey Chain Testnet',
+  nativeCurrency: { name: 'HSK', symbol: 'HSK', decimals: 18 },
+  rpcUrls: { default: { http: ['https://testnet.hsk.xyz'] } },
+  blockExplorers: { default: { name: 'Explorer', url: 'https://testnet-explorer.hsk.xyz' } },
+} as const
+
 export async function GET(request: Request) {
-  // Optional: verify cron secret to prevent unauthorized calls
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const rpcUrl = process.env.RPC_URL || 'https://testnet.hsk.xyz'
   const privateKey = process.env.ORACLE_PRIVATE_KEY
   const oracleAddress = process.env.PRICE_ORACLE_ADDRESS
 
@@ -30,9 +37,20 @@ export async function GET(request: Request) {
 
   try {
     const prices = getCommodityPrices()
-    const provider = new ethers.JsonRpcProvider(rpcUrl)
-    const signer = new ethers.Wallet(privateKey, provider)
-    const oracle = new ethers.Contract(oracleAddress, PriceOracleABI, signer)
+
+    const rpcUrl = process.env.RPC_URL || 'https://testnet.hsk.xyz'
+    const transport = http(rpcUrl)
+
+    const account = privateKeyToAccount(privateKey as `0x${string}`)
+    const walletClient = createWalletClient({
+      account,
+      chain: hashkeyTestnet as any,
+      transport,
+    })
+    const publicClient = createPublicClient({
+      chain: hashkeyTestnet as any,
+      transport,
+    })
 
     const symbols: string[] = []
     const values: bigint[] = []
@@ -45,10 +63,17 @@ export async function GET(request: Request) {
       }
     }
 
-    const tx = await oracle.updatePrices(symbols, values)
-    await tx.wait()
+    const txHash = await walletClient.writeContract({
+      address: oracleAddress as `0x${string}`,
+      abi: PriceOracleABI,
+      functionName: 'updatePrices',
+      args: [symbols, values],
+      chain: hashkeyTestnet as any,
+    })
 
-    // Store prices in Neon DB for charting (non-blocking, don't fail cron if DB is down)
+    await publicClient.waitForTransactionReceipt({ hash: txHash })
+
+    // Store in Neon DB (non-blocking)
     if (process.env.DATABASE_URL) {
       try {
         await initDb()
@@ -65,7 +90,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
-      tx: tx.hash,
+      tx: txHash,
       prices: Object.fromEntries(SYMBOLS.map((s, i) => [s, values[i].toString()])),
       updatedAt: prices.updatedAt,
     })

@@ -1,13 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ethers } from 'ethers'
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { readContract } from 'wagmi/actions'
+import { parseUnits } from 'viem'
+import { config } from '../../lib/wagmi'
 import { COMMODITIES, CONTRACT_ADDRESSES } from '../../lib/constants'
+import { USDC_CONTRACT, SPOT_CONTRACT } from '../../lib/contracts'
 import PixelCard from './PixelCard'
 
 interface Props {
-  contracts: any
-  signer: ethers.Signer | null
   onTxSuccess: () => void
 }
 
@@ -29,7 +31,9 @@ function GoldCoin({ size = 16 }: { size?: number }) {
   )
 }
 
-export default function SpotTrading({ contracts, signer, onTxSuccess }: Props) {
+export default function SpotTrading({ onTxSuccess }: Props) {
+  const { address, isConnected } = useAccount()
+
   // BUY state
   const [buySymbol, setBuySymbol] = useState<CommoditySymbol>('RICE')
   const [buyAmount, setBuyAmount] = useState('')
@@ -46,65 +50,85 @@ export default function SpotTrading({ contracts, signer, onTxSuccess }: Props) {
   const [sellError, setSellError] = useState('')
   const [sellSuccess, setSellSuccess] = useState('')
 
+  const { writeContractAsync } = useWriteContract()
+
   // Fetch buy preview
   useEffect(() => {
     setBuyPreview(null)
-    if (!contracts || !buyAmount || isNaN(Number(buyAmount)) || Number(buyAmount) <= 0) return
+    if (!buyAmount || isNaN(Number(buyAmount)) || Number(buyAmount) <= 0) return
     const timeout = setTimeout(async () => {
       try {
-        const tokenAmt = ethers.parseUnits(buyAmount, 18)
-        const result = await contracts.spot.previewBuy(buySymbol, tokenAmt)
+        const tokenAmt = parseUnits(buyAmount, 18)
+        const result = await readContract(config, {
+          ...SPOT_CONTRACT,
+          functionName: 'previewBuy',
+          args: [buySymbol, tokenAmt],
+        }) as [bigint, bigint, bigint]
         setBuyPreview({ usdcCost: result[0], fee: result[1], total: result[2] })
       } catch {
         setBuyPreview(null)
       }
     }, 400)
     return () => clearTimeout(timeout)
-  }, [contracts, buySymbol, buyAmount])
+  }, [buySymbol, buyAmount])
 
   // Fetch sell preview
   useEffect(() => {
     setSellPreview(null)
-    if (!contracts || !sellAmount || isNaN(Number(sellAmount)) || Number(sellAmount) <= 0) return
+    if (!sellAmount || isNaN(Number(sellAmount)) || Number(sellAmount) <= 0) return
     const timeout = setTimeout(async () => {
       try {
-        const tokenAmt = ethers.parseUnits(sellAmount, 18)
-        const result = await contracts.spot.previewSell(sellSymbol, tokenAmt)
+        const tokenAmt = parseUnits(sellAmount, 18)
+        const result = await readContract(config, {
+          ...SPOT_CONTRACT,
+          functionName: 'previewSell',
+          args: [sellSymbol, tokenAmt],
+        }) as [bigint, bigint]
         setSellPreview({ usdcReceived: result[0], fee: result[1] })
       } catch {
         setSellPreview(null)
       }
     }, 400)
     return () => clearTimeout(timeout)
-  }, [contracts, sellSymbol, sellAmount])
+  }, [sellSymbol, sellAmount])
 
   async function handleBuy() {
-    if (!contracts || !signer || !buyAmount) return
+    if (!isConnected || !buyAmount) return
     setBuyLoading(true)
     setBuyError('')
     setBuySuccess('')
     try {
-      const tokenAmt = ethers.parseUnits(buyAmount, 18)
-      const result = await contracts.spot.previewBuy(buySymbol, tokenAmt)
-      const total: bigint = result[2]
+      const tokenAmt = parseUnits(buyAmount, 18)
+      const result = await readContract(config, {
+        ...SPOT_CONTRACT,
+        functionName: 'previewBuy',
+        args: [buySymbol, tokenAmt],
+      }) as [bigint, bigint, bigint]
+      const total = result[2]
 
       // Approve USDC
-      const approveTx = await contracts.usdc.approve(CONTRACT_ADDRESSES.spotMarket, total)
-      await approveTx.wait()
+      const approveTx = await writeContractAsync({
+        ...USDC_CONTRACT,
+        functionName: 'approve',
+        args: [CONTRACT_ADDRESSES.spotMarket as `0x${string}`, total],
+      })
 
       // Buy
-      const buyTx = await contracts.spot.buy(buySymbol, tokenAmt)
-      await buyTx.wait()
+      const buyTx = await writeContractAsync({
+        ...SPOT_CONTRACT,
+        functionName: 'buy',
+        args: [buySymbol, tokenAmt],
+      })
 
       setBuySuccess(`You acquired ${buyAmount} ${buySymbol}!`)
       setBuyAmount('')
       setBuyPreview(null)
       onTxSuccess()
     } catch (err: any) {
-      if (err?.code === 4001 || err?.info?.error?.code === 4001) {
+      if (err?.message?.includes('User rejected') || err?.message?.includes('denied')) {
         setBuyError('Transaction rejected.')
       } else {
-        setBuyError(err?.reason || err?.message || 'Transaction failed.')
+        setBuyError(err?.shortMessage || err?.message || 'Transaction failed.')
       }
     } finally {
       setBuyLoading(false)
@@ -112,24 +136,27 @@ export default function SpotTrading({ contracts, signer, onTxSuccess }: Props) {
   }
 
   async function handleSell() {
-    if (!contracts || !signer || !sellAmount) return
+    if (!isConnected || !sellAmount) return
     setSellLoading(true)
     setSellError('')
     setSellSuccess('')
     try {
-      const tokenAmt = ethers.parseUnits(sellAmount, 18)
-      const sellTx = await contracts.spot.sell(sellSymbol, tokenAmt)
-      await sellTx.wait()
+      const tokenAmt = parseUnits(sellAmount, 18)
+      const sellTx = await writeContractAsync({
+        ...SPOT_CONTRACT,
+        functionName: 'sell',
+        args: [sellSymbol, tokenAmt],
+      })
 
       setSellSuccess(`Sold ${sellAmount} ${sellSymbol} for USDC!`)
       setSellAmount('')
       setSellPreview(null)
       onTxSuccess()
     } catch (err: any) {
-      if (err?.code === 4001 || err?.info?.error?.code === 4001) {
+      if (err?.message?.includes('User rejected') || err?.message?.includes('denied')) {
         setSellError('Transaction rejected.')
       } else {
-        setSellError(err?.reason || err?.message || 'Transaction failed.')
+        setSellError(err?.shortMessage || err?.message || 'Transaction failed.')
       }
     } finally {
       setSellLoading(false)
@@ -156,14 +183,12 @@ export default function SpotTrading({ contracts, signer, onTxSuccess }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* BUY */}
         <PixelCard>
-          {/* BUY header */}
           <div className="flex items-center gap-2 mb-3 pb-2" style={{ borderBottom: '2px solid var(--border)' }}>
             <span style={{ fontSize: '20px' }}>🛒</span>
             <span className="pixel-font text-[10px]" style={{ color: 'var(--accent)' }}>BUY CROPS</span>
           </div>
 
           <div className="flex flex-col gap-3">
-            {/* Commodity selector */}
             <div>
               <label className="pixel-font text-[7px]" style={{ color: 'var(--muted)' }}>SELECT CROP</label>
               <div className="flex gap-1 mt-1 flex-wrap">
@@ -180,28 +205,20 @@ export default function SpotTrading({ contracts, signer, onTxSuccess }: Props) {
                       color: buySymbol === c.symbol ? 'var(--bg)' : 'var(--muted)',
                     }}
                   >
-                    <img
-                      src={c.sprite}
-                      alt={c.name}
-                      width={16}
-                      height={16}
-                      style={{ imageRendering: 'pixelated', display: 'inline', marginRight: '4px', verticalAlign: 'middle' }}
-                    />
+                    <img src={c.sprite} alt={c.name} width={16} height={16}
+                      style={{ imageRendering: 'pixelated', display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
                     {c.symbol}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Amount */}
             <div>
               <label className="pixel-font text-[7px]" style={{ color: 'var(--muted)' }}>AMOUNT (UNITS)</label>
               <div className="flex items-center gap-2 mt-1">
                 <img src="/sprites/crate.png" alt="" width={24} height={24} style={{ imageRendering: 'pixelated', flexShrink: 0 }} />
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="number" min="0" step="0.01"
                   value={buyAmount}
                   onChange={(e) => setBuyAmount(e.target.value)}
                   placeholder="0.00"
@@ -210,63 +227,37 @@ export default function SpotTrading({ contracts, signer, onTxSuccess }: Props) {
               </div>
             </div>
 
-            {/* Receipt preview */}
             {buyPreview && (
-              <div
-                className="p-2 flex flex-col gap-1"
-                style={{
-                  background: '#1a1200',
-                  border: '2px solid #7a5a20',
-                  fontFamily: 'VT323, monospace',
-                  fontSize: '17px',
-                }}
-              >
+              <div className="p-2 flex flex-col gap-1"
+                style={{ background: '#1a1200', border: '2px solid #7a5a20', fontFamily: 'VT323, monospace', fontSize: '17px' }}>
                 <div className="flex items-center justify-between">
                   <span style={{ color: '#b08030' }}>Crop cost</span>
-                  <span style={{ color: 'var(--gold)' }}>
-                    <GoldCoin size={14} /> {formatUsdc(buyPreview.usdcCost)}
-                  </span>
+                  <span style={{ color: 'var(--gold)' }}><GoldCoin size={14} /> {formatUsdc(buyPreview.usdcCost)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span style={{ color: '#b08030' }}>Merchant fee</span>
-                  <span style={{ color: 'var(--muted)' }}>
-                    <GoldCoin size={14} /> {formatUsdc(buyPreview.fee)}
-                  </span>
+                  <span style={{ color: 'var(--muted)' }}><GoldCoin size={14} /> {formatUsdc(buyPreview.fee)}</span>
                 </div>
-                <div
-                  className="flex items-center justify-between pt-1"
-                  style={{ borderTop: '1px dashed #7a5a20' }}
-                >
+                <div className="flex items-center justify-between pt-1" style={{ borderTop: '1px dashed #7a5a20' }}>
                   <span className="pixel-font text-[7px]" style={{ color: '#b08030' }}>TOTAL USDC</span>
-                  <span style={{ color: 'var(--gold)', fontSize: '20px' }}>
-                    <GoldCoin size={16} /> {formatUsdc(buyPreview.total)}
-                  </span>
+                  <span style={{ color: 'var(--gold)', fontSize: '20px' }}><GoldCoin size={16} /> {formatUsdc(buyPreview.total)}</span>
                 </div>
               </div>
             )}
 
             {buyError && <p style={{ color: 'var(--red)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>{buyError}</p>}
-            {buySuccess && (
-              <p style={{ color: 'var(--accent)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>
-                {buySuccess}
-              </p>
-            )}
+            {buySuccess && <p style={{ color: 'var(--accent)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>{buySuccess}</p>}
 
             <button
               onClick={handleBuy}
-              disabled={buyLoading || !buyAmount}
+              disabled={buyLoading || !buyAmount || !isConnected}
               className="pixel-btn pixel-btn-primary w-full"
-              style={{ opacity: buyLoading || !buyAmount ? 0.6 : 1 }}
+              style={{ opacity: buyLoading || !buyAmount || !isConnected ? 0.6 : 1 }}
             >
               {buyLoading ? 'BUYING...' : `BUY ${buySymbol}`}
               {buyCommodity && !buyLoading && (
-                <img
-                  src={buyCommodity.sprite}
-                  alt=""
-                  width={14}
-                  height={14}
-                  style={{ imageRendering: 'pixelated', display: 'inline', marginLeft: '6px', verticalAlign: 'middle' }}
-                />
+                <img src={buyCommodity.sprite} alt="" width={14} height={14}
+                  style={{ imageRendering: 'pixelated', display: 'inline', marginLeft: '6px', verticalAlign: 'middle' }} />
               )}
             </button>
           </div>
@@ -274,14 +265,12 @@ export default function SpotTrading({ contracts, signer, onTxSuccess }: Props) {
 
         {/* SELL */}
         <PixelCard>
-          {/* SELL header */}
           <div className="flex items-center gap-2 mb-3 pb-2" style={{ borderBottom: '2px solid var(--border)' }}>
             <span style={{ fontSize: '20px' }}>💰</span>
             <span className="pixel-font text-[10px]" style={{ color: 'var(--red)' }}>SELL CROPS</span>
           </div>
 
           <div className="flex flex-col gap-3">
-            {/* Commodity selector */}
             <div>
               <label className="pixel-font text-[7px]" style={{ color: 'var(--muted)' }}>SELECT CROP</label>
               <div className="flex gap-1 mt-1 flex-wrap">
@@ -298,28 +287,20 @@ export default function SpotTrading({ contracts, signer, onTxSuccess }: Props) {
                       color: sellSymbol === c.symbol ? 'var(--white)' : 'var(--muted)',
                     }}
                   >
-                    <img
-                      src={c.sprite}
-                      alt={c.name}
-                      width={16}
-                      height={16}
-                      style={{ imageRendering: 'pixelated', display: 'inline', marginRight: '4px', verticalAlign: 'middle' }}
-                    />
+                    <img src={c.sprite} alt={c.name} width={16} height={16}
+                      style={{ imageRendering: 'pixelated', display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
                     {c.symbol}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Amount */}
             <div>
               <label className="pixel-font text-[7px]" style={{ color: 'var(--muted)' }}>AMOUNT (UNITS)</label>
               <div className="flex items-center gap-2 mt-1">
                 <img src="/sprites/crate.png" alt="" width={24} height={24} style={{ imageRendering: 'pixelated', flexShrink: 0 }} />
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="number" min="0" step="0.01"
                   value={sellAmount}
                   onChange={(e) => setSellAmount(e.target.value)}
                   placeholder="0.00"
@@ -328,57 +309,33 @@ export default function SpotTrading({ contracts, signer, onTxSuccess }: Props) {
               </div>
             </div>
 
-            {/* Receipt preview */}
             {sellPreview && (
-              <div
-                className="p-2 flex flex-col gap-1"
-                style={{
-                  background: '#1a1200',
-                  border: '2px solid #7a5a20',
-                  fontFamily: 'VT323, monospace',
-                  fontSize: '17px',
-                }}
-              >
+              <div className="p-2 flex flex-col gap-1"
+                style={{ background: '#1a1200', border: '2px solid #7a5a20', fontFamily: 'VT323, monospace', fontSize: '17px' }}>
                 <div className="flex items-center justify-between">
                   <span style={{ color: '#b08030' }}>Merchant fee</span>
-                  <span style={{ color: 'var(--muted)' }}>
-                    <GoldCoin size={14} /> {formatUsdc(sellPreview.fee)}
-                  </span>
+                  <span style={{ color: 'var(--muted)' }}><GoldCoin size={14} /> {formatUsdc(sellPreview.fee)}</span>
                 </div>
-                <div
-                  className="flex items-center justify-between pt-1"
-                  style={{ borderTop: '1px dashed #7a5a20' }}
-                >
+                <div className="flex items-center justify-between pt-1" style={{ borderTop: '1px dashed #7a5a20' }}>
                   <span className="pixel-font text-[7px]" style={{ color: '#b08030' }}>YOU RECEIVE</span>
-                  <span style={{ color: 'var(--gold)', fontSize: '20px' }}>
-                    <GoldCoin size={16} /> {formatUsdc(sellPreview.usdcReceived)}
-                  </span>
+                  <span style={{ color: 'var(--gold)', fontSize: '20px' }}><GoldCoin size={16} /> {formatUsdc(sellPreview.usdcReceived)}</span>
                 </div>
               </div>
             )}
 
             {sellError && <p style={{ color: 'var(--red)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>{sellError}</p>}
-            {sellSuccess && (
-              <p style={{ color: 'var(--accent)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>
-                {sellSuccess}
-              </p>
-            )}
+            {sellSuccess && <p style={{ color: 'var(--accent)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>{sellSuccess}</p>}
 
             <button
               onClick={handleSell}
-              disabled={sellLoading || !sellAmount}
+              disabled={sellLoading || !sellAmount || !isConnected}
               className="pixel-btn pixel-btn-red w-full"
-              style={{ opacity: sellLoading || !sellAmount ? 0.6 : 1 }}
+              style={{ opacity: sellLoading || !sellAmount || !isConnected ? 0.6 : 1 }}
             >
               {sellLoading ? 'SELLING...' : `SELL ${sellSymbol}`}
               {sellCommodity && !sellLoading && (
-                <img
-                  src={sellCommodity.sprite}
-                  alt=""
-                  width={14}
-                  height={14}
-                  style={{ imageRendering: 'pixelated', display: 'inline', marginLeft: '6px', verticalAlign: 'middle' }}
-                />
+                <img src={sellCommodity.sprite} alt="" width={14} height={14}
+                  style={{ imageRendering: 'pixelated', display: 'inline', marginLeft: '6px', verticalAlign: 'middle' }} />
               )}
             </button>
           </div>

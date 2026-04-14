@@ -2,12 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi'
+import { useAccount, useConnect, useDisconnect, useSwitchChain, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { injected } from 'wagmi/connectors'
-import { ethers } from 'ethers'
 import { hashkeyTestnet } from '../lib/wagmi'
-import { useEthersSigner } from '../lib/useEthersSigner'
-import { getContracts } from '../lib/contracts'
+import { USDC_CONTRACT } from '../lib/contracts'
 import PriceTicker from '../components/trade/PriceTicker'
 import PriceChart from '../components/trade/PriceChart'
 import SpotTrading from '../components/trade/SpotTrading'
@@ -47,9 +45,6 @@ const TAB_CONFIG: {
 
 export default function TradePage() {
   const [activeTab, setActiveTab] = useState<Tab>('spot')
-  const [contracts, setContracts] = useState<ReturnType<typeof getContracts> | null>(null)
-  const [usdcBalance, setUsdcBalance] = useState<bigint>(BigInt(0))
-  const [faucetLoading, setFaucetLoading] = useState(false)
   const [faucetError, setFaucetError] = useState('')
   const [faucetSuccess, setFaucetSuccess] = useState('')
 
@@ -58,50 +53,33 @@ export default function TradePage() {
   const { connect, isPending: connectLoading, error: connectErr } = useConnect()
   const { disconnect } = useDisconnect()
   const { switchChain } = useSwitchChain()
-  const signer = useEthersSigner()
 
   // Wrong chain detection
   const wrongChain = isConnected && chain?.id !== hashkeyTestnet.id
 
-  // Init contracts when signer is available
+  // Read USDC balance
+  const { data: usdcBalance, refetch: refetchBalance } = useReadContract({
+    ...USDC_CONTRACT,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    query: { enabled: !!address && isConnected && !wrongChain },
+  })
+
+  // Write: faucet claim
+  const { writeContractAsync: writeFaucet, isPending: faucetLoading, data: faucetTxHash } = useWriteContract()
+
+  // Wait for faucet tx
+  const { isSuccess: faucetTxSuccess } = useWaitForTransactionReceipt({
+    hash: faucetTxHash,
+  })
+
+  // Refresh balance after faucet tx confirms
   useEffect(() => {
-    if (signer) {
-      try {
-        const ctrs = getContracts(signer)
-        setContracts(ctrs)
-      } catch (err) {
-        console.warn('Failed to init contracts:', err)
-        setContracts(null)
-      }
-    } else {
-      setContracts(null)
+    if (faucetTxSuccess) {
+      setFaucetSuccess('You claimed 1000 USDC!')
+      refetchBalance()
     }
-  }, [signer])
-
-  const fetchUsdcBalance = useCallback(async (
-    ctrs: ReturnType<typeof getContracts>,
-    addr: string
-  ) => {
-    try {
-      const bal: bigint = await ctrs.usdc.balanceOf(addr)
-      setUsdcBalance(bal)
-    } catch {
-      // silently fail
-    }
-  }, [])
-
-  // Fetch balance when contracts/address change
-  useEffect(() => {
-    if (contracts && address) {
-      fetchUsdcBalance(contracts, address)
-    }
-  }, [contracts, address, fetchUsdcBalance])
-
-  const refreshBalance = useCallback(() => {
-    if (contracts && address) {
-      fetchUsdcBalance(contracts, address)
-    }
-  }, [contracts, address, fetchUsdcBalance])
+  }, [faucetTxSuccess, refetchBalance])
 
   function handleConnect() {
     connect({ connector: injected() })
@@ -112,27 +90,25 @@ export default function TradePage() {
   }
 
   async function handleFaucet() {
-    if (!contracts) return
-    setFaucetLoading(true)
     setFaucetError('')
     setFaucetSuccess('')
     try {
-      const tx = await contracts.usdc.faucet()
-      await tx.wait()
-      setFaucetSuccess('You claimed 1000 USDC!')
-      refreshBalance()
+      await writeFaucet({
+        ...USDC_CONTRACT,
+        functionName: 'faucet',
+      })
     } catch (err: any) {
-      if (err?.code === 4001 || err?.info?.error?.code === 4001) {
+      if (err?.message?.includes('User rejected') || err?.message?.includes('denied')) {
         setFaucetError('Transaction rejected.')
-      } else if (err?.reason?.includes('cooldown')) {
+      } else if (err?.message?.includes('cooldown')) {
         setFaucetError('The well is dry. Come back tomorrow!')
       } else {
-        setFaucetError(err?.reason || err?.message || 'Faucet claim failed.')
+        setFaucetError(err?.shortMessage || err?.message || 'Faucet claim failed.')
       }
-    } finally {
-      setFaucetLoading(false)
     }
   }
+
+  const balance = usdcBalance ? (Number(usdcBalance as bigint) / 1e6).toFixed(2) : '0.00'
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)', position: 'relative', overflow: 'hidden' }}>
@@ -170,7 +146,7 @@ export default function TradePage() {
       >
         {/* Top row: logo + wallet + back */}
         <div className="flex items-center justify-between px-4 py-2 gap-3 flex-wrap">
-          {/* Logo + farmer avatar */}
+          {/* Logo */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <img
               src="/logo.png"
@@ -328,7 +304,7 @@ export default function TradePage() {
                   style={{ imageRendering: 'pixelated' }}
                 />
                 <span style={{ color: 'var(--gold)', fontFamily: 'VT323, monospace', fontSize: '22px' }}>
-                  {(Number(usdcBalance) / 1e6).toFixed(2)}
+                  {balance}
                 </span>
                 <span className="pixel-font text-[7px]" style={{ color: 'var(--gold)', marginLeft: '2px' }}>
                   USDC
@@ -342,9 +318,9 @@ export default function TradePage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={handleFaucet}
-                disabled={faucetLoading || !contracts}
+                disabled={faucetLoading || !isConnected || wrongChain}
                 className="pixel-btn pixel-btn-primary"
-                style={{ opacity: faucetLoading || !contracts ? 0.6 : 1 }}
+                style={{ opacity: faucetLoading || !isConnected || wrongChain ? 0.6 : 1 }}
               >
                 {faucetLoading ? 'CLAIMING...' : 'CLAIM 1000 USDC'}
               </button>
@@ -418,18 +394,10 @@ export default function TradePage() {
         {/* ── TAB CONTENT ───────────────────────────────────────── */}
         <div>
           {activeTab === 'spot' && (
-            <SpotTrading
-              contracts={contracts}
-              signer={signer}
-              onTxSuccess={refreshBalance}
-            />
+            <SpotTrading onTxSuccess={() => refetchBalance()} />
           )}
           {activeTab === 'perp' && (
-            <PerpTrading
-              contracts={contracts}
-              signer={signer}
-              onTxSuccess={refreshBalance}
-            />
+            <PerpTrading onTxSuccess={() => refetchBalance()} />
           )}
         </div>
       </main>

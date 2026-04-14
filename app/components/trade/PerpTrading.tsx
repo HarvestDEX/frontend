@@ -1,13 +1,15 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { ethers } from 'ethers'
+import { useAccount, useWriteContract } from 'wagmi'
+import { readContract } from 'wagmi/actions'
+import { parseUnits } from 'viem'
+import { config } from '../../lib/wagmi'
 import { COMMODITIES, LEVERAGE_OPTIONS, CONTRACT_ADDRESSES } from '../../lib/constants'
+import { USDC_CONTRACT, ORACLE_CONTRACT, PM_CONTRACT } from '../../lib/contracts'
 import PixelCard from './PixelCard'
 
 interface Props {
-  contracts: any
-  signer: ethers.Signer | null
   onTxSuccess: () => void
 }
 
@@ -18,12 +20,12 @@ interface Position {
   id: number
   trader: string
   symbol: string
-  direction: number // 0=LONG, 1=SHORT
+  direction: number
   collateral: bigint
   size: bigint
   entryPrice: bigint
   leverage: number
-  status: number // 0=OPEN, 1=CLOSED, 2=LIQUIDATED
+  status: number
   openedAt: bigint
   pnl?: bigint
   currentPrice?: bigint
@@ -61,7 +63,9 @@ const LEVERAGE_LABELS: Record<number, string> = {
   5: '5x EXTREME',
 }
 
-export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
+export default function PerpTrading({ onTxSuccess }: Props) {
+  const { address, isConnected } = useAccount()
+
   const [symbol, setSymbol] = useState<CommoditySymbol>('RICE')
   const [direction, setDirection] = useState<Direction>('LONG')
   const [collateral, setCollateral] = useState('')
@@ -76,33 +80,47 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
   const [closeLoading, setCloseLoading] = useState<number | null>(null)
   const [closeError, setCloseError] = useState('')
 
+  const { writeContractAsync } = useWriteContract()
+
   // Fetch current oracle price for preview
   useEffect(() => {
-    if (!contracts) return
-    contracts.oracle.getPriceRaw(symbol)
-      .then((r: any) => setEntryPrice(r[0]))
+    readContract(config, {
+      ...ORACLE_CONTRACT,
+      functionName: 'getPriceRaw',
+      args: [symbol],
+    }).then((r: any) => setEntryPrice(r[0]))
       .catch(() => setEntryPrice(null))
-  }, [contracts, symbol])
+  }, [symbol])
 
   // Fetch positions
   const fetchPositions = useCallback(async () => {
-    if (!contracts || !signer) return
+    if (!isConnected || !address) return
     setPosLoading(true)
     try {
-      const address = await signer.getAddress()
-      const nextId: bigint = await contracts.pm.nextPositionId()
+      const nextId = await readContract(config, {
+        ...PM_CONTRACT,
+        functionName: 'nextPositionId',
+      }) as bigint
       const total = Number(nextId)
       const fetched: Position[] = []
 
       for (let i = 0; i < total; i++) {
-        const pos = await contracts.pm.getPosition(i)
+        const pos = await readContract(config, {
+          ...PM_CONTRACT,
+          functionName: 'getPosition',
+          args: [BigInt(i)],
+        }) as any
         if (pos.trader.toLowerCase() !== address.toLowerCase()) continue
-        if (pos.status !== BigInt(0)) continue // only OPEN
+        if (Number(pos.status) !== 0) continue
 
         let pnl: bigint | undefined
         let currentPrice: bigint | undefined
         try {
-          const pnlResult = await contracts.pm.getUnrealizedPnL(i)
+          const pnlResult = await readContract(config, {
+            ...PM_CONTRACT,
+            functionName: 'getUnrealizedPnL',
+            args: [BigInt(i)],
+          }) as [bigint, bigint]
           pnl = pnlResult[0]
           currentPrice = pnlResult[1]
         } catch {}
@@ -128,46 +146,47 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
     } finally {
       setPosLoading(false)
     }
-  }, [contracts, signer])
+  }, [isConnected, address])
 
   useEffect(() => {
     fetchPositions()
   }, [fetchPositions])
 
   async function handleOpen() {
-    if (!contracts || !signer || !collateral) return
+    if (!isConnected || !collateral) return
     setOpenLoading(true)
     setOpenError('')
     setOpenSuccess('')
     try {
-      const collateralAmt = ethers.parseUnits(collateral, 6)
+      const collateralAmt = parseUnits(collateral, 6)
       const notional = collateralAmt * BigInt(leverage)
-      const openFeeBps = BigInt(10)
-      const openFee = (notional * openFeeBps) / BigInt(10000)
+      const openFee = (notional * BigInt(10)) / BigInt(10000)
       const totalApprove = collateralAmt + openFee
 
       // Approve USDC
-      const approveTx = await contracts.usdc.approve(CONTRACT_ADDRESSES.positionManager, totalApprove)
-      await approveTx.wait()
+      await writeContractAsync({
+        ...USDC_CONTRACT,
+        functionName: 'approve',
+        args: [CONTRACT_ADDRESSES.positionManager as `0x${string}`, totalApprove],
+      })
 
       // Open position
-      let tx
-      if (direction === 'LONG') {
-        tx = await contracts.pm.openLong(symbol, leverage, collateralAmt)
-      } else {
-        tx = await contracts.pm.openShort(symbol, leverage, collateralAmt)
-      }
-      await tx.wait()
+      const fn = direction === 'LONG' ? 'openLong' : 'openShort'
+      await writeContractAsync({
+        ...PM_CONTRACT,
+        functionName: fn,
+        args: [symbol, leverage, collateralAmt],
+      })
 
       setOpenSuccess(`Quest accepted! ${direction} ${symbol} x${leverage}`)
       setCollateral('')
       onTxSuccess()
       fetchPositions()
     } catch (err: any) {
-      if (err?.code === 4001 || err?.info?.error?.code === 4001) {
+      if (err?.message?.includes('User rejected') || err?.message?.includes('denied')) {
         setOpenError('Transaction rejected.')
       } else {
-        setOpenError(err?.reason || err?.message || 'Failed to open position.')
+        setOpenError(err?.shortMessage || err?.message || 'Failed to open position.')
       }
     } finally {
       setOpenLoading(false)
@@ -175,19 +194,21 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
   }
 
   async function handleClose(positionId: number) {
-    if (!contracts) return
     setCloseLoading(positionId)
     setCloseError('')
     try {
-      const tx = await contracts.pm.closePosition(positionId)
-      await tx.wait()
+      await writeContractAsync({
+        ...PM_CONTRACT,
+        functionName: 'closePosition',
+        args: [BigInt(positionId)],
+      })
       onTxSuccess()
       fetchPositions()
     } catch (err: any) {
-      if (err?.code === 4001 || err?.info?.error?.code === 4001) {
+      if (err?.message?.includes('User rejected') || err?.message?.includes('denied')) {
         setCloseError('Transaction rejected.')
       } else {
-        setCloseError(err?.reason || err?.message || 'Failed to close position.')
+        setCloseError(err?.shortMessage || err?.message || 'Failed to close position.')
       }
     } finally {
       setCloseLoading(null)
@@ -214,7 +235,7 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
         <img src="/sprites/signpost.png" alt="" width={32} height={40} style={{ imageRendering: 'pixelated', marginLeft: 'auto' }} />
       </div>
 
-      {/* Open Position — styled as quest board */}
+      {/* Open Position */}
       <PixelCard>
         <div className="flex items-center gap-2 mb-4 pb-2" style={{ borderBottom: '2px solid var(--border)' }}>
           <span style={{ fontSize: '18px' }}>📜</span>
@@ -227,47 +248,33 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
             <label className="pixel-font text-[7px]" style={{ color: 'var(--muted)' }}>COMMODITY TARGET</label>
             <div className="flex gap-1 mt-1 flex-wrap">
               {COMMODITIES.map((c) => (
-                <button
-                  key={c.symbol}
-                  onClick={() => setSymbol(c.symbol as CommoditySymbol)}
-                  className="pixel-btn"
-                  style={{
-                    padding: '4px 8px',
-                    fontSize: '8px',
+                <button key={c.symbol} onClick={() => setSymbol(c.symbol as CommoditySymbol)}
+                  className="pixel-btn" style={{
+                    padding: '4px 8px', fontSize: '8px',
                     background: symbol === c.symbol ? 'var(--accent)' : 'var(--surface)',
                     borderColor: symbol === c.symbol ? 'var(--accent)' : 'var(--border)',
                     color: symbol === c.symbol ? 'var(--bg)' : 'var(--muted)',
-                  }}
-                >
-                  <img
-                    src={c.sprite}
-                    alt={c.name}
-                    width={16}
-                    height={16}
-                    style={{ imageRendering: 'pixelated', display: 'inline', marginRight: '4px', verticalAlign: 'middle' }}
-                  />
+                  }}>
+                  <img src={c.sprite} alt={c.name} width={16} height={16}
+                    style={{ imageRendering: 'pixelated', display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
                   {c.symbol}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Direction — RPG choice buttons */}
+          {/* Direction */}
           <div>
             <label className="pixel-font text-[7px]" style={{ color: 'var(--muted)' }}>QUEST TYPE</label>
             <div className="flex gap-2 mt-1">
-              <button
-                onClick={() => setDirection('LONG')}
+              <button onClick={() => setDirection('LONG')}
                 className={`pixel-btn flex-1 ${direction === 'LONG' ? 'pixel-btn-blue' : ''}`}
-                style={direction !== 'LONG' ? { background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' } : {}}
-              >
+                style={direction !== 'LONG' ? { background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' } : {}}>
                 GO LONG 📈
               </button>
-              <button
-                onClick={() => setDirection('SHORT')}
+              <button onClick={() => setDirection('SHORT')}
                 className={`pixel-btn flex-1 ${direction === 'SHORT' ? 'pixel-btn-red' : ''}`}
-                style={direction !== 'SHORT' ? { background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' } : {}}
-              >
+                style={direction !== 'SHORT' ? { background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' } : {}}>
                 GO SHORT 📉
               </button>
             </div>
@@ -278,19 +285,12 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
             <label className="pixel-font text-[7px]" style={{ color: 'var(--muted)' }}>USDC WAGER</label>
             <div className="flex items-center gap-2 mt-1">
               <GoldCoin size={24} />
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={collateral}
-                onChange={(e) => setCollateral(e.target.value)}
-                placeholder="100"
-                className="pixel-input"
-              />
+              <input type="number" min="0" step="1" value={collateral}
+                onChange={(e) => setCollateral(e.target.value)} placeholder="100" className="pixel-input" />
             </div>
           </div>
 
-          {/* Leverage — difficulty selector */}
+          {/* Leverage */}
           <div>
             <label className="pixel-font text-[7px]" style={{ color: 'var(--muted)' }}>QUEST DIFFICULTY</label>
             <div className="flex gap-2 mt-1 flex-wrap">
@@ -304,12 +304,8 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
                   else activeStyle = { background: '#9030d0', color: 'var(--white)', borderColor: '#6010a0' }
                 }
                 return (
-                  <button
-                    key={lv}
-                    onClick={() => setLeverage(lv)}
-                    className="pixel-btn"
-                    style={isActive ? activeStyle : { background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)', fontSize: '8px' }}
-                  >
+                  <button key={lv} onClick={() => setLeverage(lv)} className="pixel-btn"
+                    style={isActive ? activeStyle : { background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)', fontSize: '8px' }}>
                     {LEVERAGE_LABELS[lv]}
                   </button>
                 )
@@ -317,17 +313,10 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
             </div>
           </div>
 
-          {/* Quest rewards preview */}
+          {/* Quest details preview */}
           {(notional || entryPrice) && (
-            <div
-              className="p-3 flex flex-col gap-1"
-              style={{
-                background: '#0a1a0a',
-                border: '2px solid var(--accent)',
-                fontFamily: 'VT323, monospace',
-                fontSize: '17px',
-              }}
-            >
+            <div className="p-3 flex flex-col gap-1"
+              style={{ background: '#0a1a0a', border: '2px solid var(--accent)', fontFamily: 'VT323, monospace', fontSize: '17px' }}>
               <div className="pixel-font text-[7px] mb-1" style={{ color: 'var(--accent)' }}>QUEST DETAILS</div>
               {selectedCommodity && (
                 <div className="flex items-center gap-1">
@@ -342,9 +331,7 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
               {notional && (
                 <div className="flex justify-between">
                   <span style={{ color: 'var(--muted)' }}>Notional size</span>
-                  <span style={{ color: 'var(--gold)' }}>
-                    <GoldCoin size={14} /> {notional}
-                  </span>
+                  <span style={{ color: 'var(--gold)' }}><GoldCoin size={14} /> {notional}</span>
                 </div>
               )}
               {entryPrice && (
@@ -356,9 +343,7 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
               {notional && (
                 <div className="flex justify-between">
                   <span style={{ color: 'var(--muted)' }}>Guild fee (0.1%)</span>
-                  <span style={{ color: 'var(--muted)' }}>
-                    <GoldCoin size={14} /> {(Number(notional) * 0.001).toFixed(2)}
-                  </span>
+                  <span style={{ color: 'var(--muted)' }}><GoldCoin size={14} /> {(Number(notional) * 0.001).toFixed(2)}</span>
                 </div>
               )}
             </div>
@@ -367,42 +352,29 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
           {openError && <p style={{ color: 'var(--red)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>{openError}</p>}
           {openSuccess && <p style={{ color: 'var(--accent)', fontFamily: 'VT323, monospace', fontSize: '16px' }}>{openSuccess}</p>}
 
-          <button
-            onClick={handleOpen}
-            disabled={openLoading || !collateral}
+          <button onClick={handleOpen} disabled={openLoading || !collateral || !isConnected}
             className={`pixel-btn w-full ${direction === 'LONG' ? 'pixel-btn-blue' : 'pixel-btn-red'}`}
-            style={{ opacity: openLoading || !collateral ? 0.6 : 1 }}
-          >
-            {openLoading
-              ? 'ACCEPTING QUEST...'
-              : `${direction === 'LONG' ? '📈' : '📉'} OPEN ${direction} ${symbol} x${leverage}`}
+            style={{ opacity: openLoading || !collateral || !isConnected ? 0.6 : 1 }}>
+            {openLoading ? 'ACCEPTING QUEST...' : `${direction === 'LONG' ? '📈' : '📉'} OPEN ${direction} ${symbol} x${leverage}`}
           </button>
         </div>
       </PixelCard>
 
-      {/* My Positions — Active Quests */}
+      {/* Active Quests */}
       <PixelCard>
         <div className="flex items-center gap-2 mb-3 pb-2" style={{ borderBottom: '2px solid var(--border)' }}>
           <span style={{ fontSize: '18px' }}>⚔️</span>
           <span className="pixel-font text-[10px]" style={{ color: 'var(--gold)' }}>ACTIVE QUESTS</span>
           {positions.length > 0 && (
-            <span
-              className="pixel-font text-[7px] ml-auto"
-              style={{
-                background: 'var(--accent)',
-                color: 'var(--bg)',
-                padding: '2px 6px',
-              }}
-            >
+            <span className="pixel-font text-[7px] ml-auto"
+              style={{ background: 'var(--accent)', color: 'var(--bg)', padding: '2px 6px' }}>
               {positions.length} OPEN
             </span>
           )}
         </div>
 
         {posLoading && (
-          <p style={{ color: 'var(--muted)', fontFamily: 'VT323, monospace', fontSize: '17px' }}>
-            Checking quest board...
-          </p>
+          <p style={{ color: 'var(--muted)', fontFamily: 'VT323, monospace', fontSize: '17px' }}>Checking quest board...</p>
         )}
         {!posLoading && positions.length === 0 && (
           <div className="flex items-center gap-3 py-2">
@@ -413,9 +385,7 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
           </div>
         )}
         {closeError && (
-          <p style={{ color: 'var(--red)', fontFamily: 'VT323, monospace', fontSize: '16px' }} className="mb-2">
-            {closeError}
-          </p>
+          <p style={{ color: 'var(--red)', fontFamily: 'VT323, monospace', fontSize: '16px' }} className="mb-2">{closeError}</p>
         )}
 
         <div className="flex flex-col gap-3">
@@ -427,15 +397,11 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
             const posCommodity = COMMODITIES.find((c) => c.symbol === pos.symbol)
 
             return (
-              <div
-                key={pos.id}
-                className="p-3 flex flex-col gap-2"
+              <div key={pos.id} className="p-3 flex flex-col gap-2"
                 style={{
                   background: 'var(--surface)',
                   border: `2px solid ${pnlPositive ? 'var(--accent)' : pnlNum !== null ? 'var(--red)' : 'var(--border)'}`,
-                }}
-              >
-                {/* Quest header */}
+                }}>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     {posCommodity && (
@@ -443,33 +409,20 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
                     )}
                     <div>
                       <span className="pixel-font text-[8px]" style={{ color: 'var(--white)' }}>{pos.symbol}</span>
-                      <span className="pixel-font text-[8px] ml-2" style={{ color: dirColor }}>
-                        {dirLabel}
-                      </span>
-                      <span className="pixel-font text-[7px] ml-2" style={{ color: 'var(--muted)' }}>
-                        x{pos.leverage}
-                      </span>
+                      <span className="pixel-font text-[8px] ml-2" style={{ color: dirColor }}>{dirLabel}</span>
+                      <span className="pixel-font text-[7px] ml-2" style={{ color: 'var(--muted)' }}>x{pos.leverage}</span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleClose(pos.id)}
-                    disabled={closeLoading === pos.id}
+                  <button onClick={() => handleClose(pos.id)} disabled={closeLoading === pos.id}
                     className="pixel-btn pixel-btn-primary"
-                    style={{ fontSize: '8px', padding: '4px 8px', opacity: closeLoading === pos.id ? 0.6 : 1 }}
-                  >
+                    style={{ fontSize: '8px', padding: '4px 8px', opacity: closeLoading === pos.id ? 0.6 : 1 }}>
                     {closeLoading === pos.id ? 'CLOSING...' : 'COMPLETE QUEST'}
                   </button>
                 </div>
 
-                {/* Quest stats */}
-                <div
-                  className="flex flex-wrap gap-3"
-                  style={{ fontFamily: 'VT323, monospace', fontSize: '17px' }}
-                >
+                <div className="flex flex-wrap gap-3" style={{ fontFamily: 'VT323, monospace', fontSize: '17px' }}>
                   <span style={{ color: 'var(--muted)' }}>
-                    Wager: <span style={{ color: 'var(--gold)' }}>
-                      <GoldCoin size={13} /> {formatUsdc(pos.collateral)}
-                    </span>
+                    Wager: <span style={{ color: 'var(--gold)' }}><GoldCoin size={13} /> {formatUsdc(pos.collateral)}</span>
                   </span>
                   <span style={{ color: 'var(--muted)' }}>
                     Entry: <span style={{ color: 'var(--gold)' }}>${formatPrice(pos.entryPrice)}</span>
@@ -481,8 +434,7 @@ export default function PerpTrading({ contracts, signer, onTxSuccess }: Props) {
                   )}
                   {pnlNum !== null && (
                     <span style={{ color: pnlPositive ? 'var(--accent)' : 'var(--red)', fontWeight: 'bold' }}>
-                      {pnlPositive ? '▲' : '▼'} PnL:{' '}
-                      <GoldCoin size={13} /> {formatPnl(pos.pnl!)}
+                      {pnlPositive ? '▲' : '▼'} PnL: <GoldCoin size={13} /> {formatPnl(pos.pnl!)}
                     </span>
                   )}
                 </div>
